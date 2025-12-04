@@ -1,0 +1,181 @@
+import { useState, useEffect } from 'react'
+import { Users, Video, UserPlus, TrendingUp, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react'
+import StatCard from '../components/StatCard'
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import api from '../services/api'
+
+export default function Dashboard() {
+  const [stats, setStats] = useState({
+    activeUsers: 0,
+    ongoingSessions: 0,
+    newSignups: 0,
+    revenue: 0,
+    reportsLastDay: 0
+  })
+  const [chartData, setChartData] = useState([])
+  const [revenueData, setRevenueData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await api.get('/admin/dashboard')
+      setStats(response.data.stats)
+      setChartData(response.data.userActivity)
+      setRevenueData(response.data.revenueData)
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const COLORS = ['#9333ea', '#7c3aed', '#6d28d9', '#5b21b6']
+
+  if (loading) {
+    return <div className="text-center py-8">Loading dashboard...</div>
+  }
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-dark-100">Dashboard</h1>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard
+          icon={Users}
+          title="Active Users"
+          value={stats.activeUsers}
+          change="+12%"
+          trend="up"
+          color="bg-blue-900/30"
+        />
+        <StatCard
+          icon={Video}
+          title="Live Sessions"
+          value={stats.ongoingSessions}
+          change="+8%"
+          trend="up"
+          color="bg-green-900/30"
+        />
+        <StatCard
+          icon={UserPlus}
+          title="New Signups"
+          value={stats.newSignups}
+          change="+23%"
+          trend="up"
+          color="bg-purple-900/30"
+        />
+        <StatCard
+          icon={TrendingUp}
+          title="Revenue"
+          value={`$${stats.revenue}`}
+          change="+15%"
+          trend="up"
+          color="bg-yellow-900/30"
+        />
+        <StatCard
+          icon={AlertCircle}
+          title="Reports (24h)"
+          value={stats.reportsLastDay}
+          change="+3%"
+          trend="up"
+          color="bg-red-900/30"
+        />
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* User Activity Chart */}
+        <div className="bg-dark-800 border border-dark-700 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-dark-100 mb-4">User Activity</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis stroke="#94a3b8" />
+              <YAxis stroke="#94a3b8" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}
+                labelStyle={{ color: '#e2e8f0' }}
+              />
+              <Line
+                type="monotone"
+                dataKey="users"
+                stroke="#9333ea"
+                strokeWidth={2}
+                dot={{ fill: '#9333ea', r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Revenue Chart */}
+        <div className="bg-dark-800 border border-dark-700 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-dark-100 mb-4">Revenue</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={revenueData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis stroke="#94a3b8" />
+              <YAxis stroke="#94a3b8" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}
+                labelStyle={{ color: '#e2e8f0' }}
+              />
+              <Bar dataKey="revenue" fill="#9333ea" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-dark-800 border border-dark-700 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-dark-100 mb-4">Recent Activity</h2>
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-dark-700/30 rounded-lg hover:bg-dark-700/50 transition-colors">
+                <div>
+                  <p className="text-sm font-medium text-dark-200">User activity {i + 1}</p>
+                  <p className="text-xs text-dark-400">2 minutes ago</p>
+                </div>
+                <span className="px-3 py-1 bg-blue-900/30 text-blue-300 text-xs rounded-full">New</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-dark-800 border border-dark-700 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-dark-100 mb-4">User Distribution</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'Active', value: 65 },
+                  { name: 'Inactive', value: 20 },
+                  { name: 'Suspended', value: 10 },
+                  { name: 'Banned', value: 5 },
+                ]}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={90}
+                dataKey="value"
+              >
+                {COLORS.map((color, index) => (
+                  <Cell key={`cell-${index}`} fill={color} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}
+                labelStyle={{ color: '#e2e8f0' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  )
+}
