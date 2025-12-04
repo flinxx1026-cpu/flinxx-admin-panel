@@ -15,7 +15,7 @@ export default function Login() {
     setError('')
 
     try {
-      const response = await api.post('/admin/login', credentials)
+      const response = await api.post('/api/admin/login', credentials)
       localStorage.setItem('adminToken', response.data.token)
       localStorage.setItem('adminInfo', JSON.stringify(response.data.admin))
       navigate('/')
