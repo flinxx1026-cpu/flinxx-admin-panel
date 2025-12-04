@@ -3,10 +3,10 @@ node_modules/
 npm-debug.log*
 yarn-error.log*
 
-# Environment variables
-.env
+# Environment variables (sensitive ones only)
 .env.local
 .env.*.local
+backend/.env
 
 # Build outputs
 dist/
