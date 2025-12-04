@@ -1,20 +1,23 @@
-import mongoose from 'mongoose'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export const connectDB = async () => {
   try {
-    const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/flinxx-admin'
-    await mongoose.connect(mongoUrl)
-    console.log('MongoDB connected successfully')
+    await prisma.$connect()
+    console.log('PostgreSQL connected successfully via Prisma')
   } catch (error) {
-    console.warn('MongoDB connection failed - using mock data:', error.message)
-    // Don't exit - allow app to run with mock data
+    console.error('PostgreSQL connection failed:', error.message)
+    process.exit(1)
   }
 }
 
 export const disconnectDB = async () => {
   try {
-    await mongoose.disconnect()
+    await prisma.$disconnect()
   } catch (error) {
-    console.error('Error disconnecting from MongoDB:', error)
+    console.error('Error disconnecting from PostgreSQL:', error)
   }
 }
+
+export default prisma

@@ -1,26 +1,19 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import bcryptjs from 'bcryptjs'
+import prisma from '../config/database.js'
 
 const router = express.Router()
-
-// Mock admin data - replace with DB queries
-const admins = [
-  {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@flinxx.com',
-    password: bcryptjs.hashSync('password', 10),
-    role: 'Super Admin'
-  }
-]
 
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body
     console.log('Login attempt:', { email, receivedPassword: password ? 'provided' : 'missing' })
 
-    const admin = admins.find(a => a.email === email)
+    const admin = await prisma.admin.findUnique({
+      where: { email }
+    })
+
     if (!admin) {
       console.log('Admin not found:', email)
       return res.status(401).json({ message: 'Invalid credentials' })
@@ -45,7 +38,6 @@ router.post('/login', async (req, res) => {
       token,
       admin: {
         id: admin.id,
-        name: admin.name,
         email: admin.email,
         role: admin.role
       }
@@ -57,3 +49,4 @@ router.post('/login', async (req, res) => {
 })
 
 export default router
+
