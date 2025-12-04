@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon --exec node src/server.js",
     "build": "echo 'Backend ready'",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^5.15.0",
