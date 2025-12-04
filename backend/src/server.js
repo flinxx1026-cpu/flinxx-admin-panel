@@ -14,25 +14,25 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Debug: Log allowed origins
-console.log("Allowed Origins:", [
-  "https://flinxx-admin-panel.vercel.app",
-  "http://localhost:5173",
-  process.env.FRONTEND_URL
-])
-
 // Middleware
 app.use(
   cors({
     origin: [
-      "https://flinxx-admin-panel.vercel.app", // Vercel frontend
-      "http://localhost:5173",                 // Local Dev
-      process.env.FRONTEND_URL                // Environment override
+      "https://flinxx-admin-panel.vercel.app",
+      "http://localhost:5173",
+      process.env.FRONTEND_URL
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
-)
+);
+
+console.log("Allowed Origins:", [
+  "https://flinxx-admin-panel.vercel.app",
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
+]);
+
 app.use(express.json())
 
 // Connect Database
