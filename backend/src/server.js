@@ -15,19 +15,24 @@ const app = express()
 const PORT = process.env.PORT || 3001
 
 // Debug: Log allowed origins
-const allowedOrigins = [
+console.log("Allowed Origins:", [
   "https://flinxx-admin-panel.vercel.app",
   "http://localhost:5173",
   process.env.FRONTEND_URL
-]
-console.log("Allowed Origins:", allowedOrigins)
+])
 
 // Middleware
-app.use(cors({
-  origin: allowedOrigins,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}))
+app.use(
+  cors({
+    origin: [
+      "https://flinxx-admin-panel.vercel.app", // Vercel frontend
+      "http://localhost:5173",                 // Local Dev
+      process.env.FRONTEND_URL                // Environment override
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+)
 app.use(express.json())
 
 // Connect Database
