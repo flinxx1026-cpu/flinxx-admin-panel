@@ -5,6 +5,50 @@ import prisma from '../config/database.js'
 
 const router = express.Router()
 
+// Endpoint to create admin user (for initial setup)
+router.post('/create-admin', async (req, res) => {
+  try {
+    console.log('🔐 Create admin request received')
+    
+    // Check if admin already exists
+    const existingAdmin = await prisma.admin.findUnique({
+      where: { email: 'Nikhilyadav1026@flinxx.com' }
+    })
+    
+    if (existingAdmin) {
+      console.log('⚠️ Admin already exists')
+      return res.json({ 
+        message: 'Admin already exists',
+        email: existingAdmin.email,
+        status: 'success'
+      })
+    }
+    
+    // Create admin user
+    const admin = await prisma.admin.create({
+      data: {
+        email: 'Nikhilyadav1026@flinxx.com',
+        password: '$2a$10$hw//L5nGXC7fMrTjFOWnHOZJ5XTPJ9PhabzGX4GqLwYClj0haZFae',
+        role: 'ADMIN'
+      }
+    })
+    
+    console.log('✅ Admin user created successfully!')
+    res.json({
+      message: 'Admin user created successfully',
+      email: admin.email,
+      role: admin.role,
+      status: 'success'
+    })
+  } catch (error) {
+    console.error('❌ Error creating admin:', error.message)
+    res.status(500).json({ 
+      message: 'Failed to create admin',
+      error: error.message
+    })
+  }
+})
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body
