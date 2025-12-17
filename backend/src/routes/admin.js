@@ -10,21 +10,13 @@ router.post('/create-admin', async (req, res) => {
   try {
     console.log('🔐 Create admin request received')
     
-    // Check if admin already exists
-    const existingAdmin = await prisma.admin.findUnique({
+    // Delete existing admin if any (to ensure correct password hash)
+    await prisma.admin.deleteMany({
       where: { email: 'Nikhilyadav1026@flinxx.com' }
     })
+    console.log('Deleted existing admin if present')
     
-    if (existingAdmin) {
-      console.log('⚠️ Admin already exists')
-      return res.json({ 
-        message: 'Admin already exists',
-        email: existingAdmin.email,
-        status: 'success'
-      })
-    }
-    
-    // Create admin user
+    // Create admin user with correct bcrypt hash
     const admin = await prisma.admin.create({
       data: {
         email: 'Nikhilyadav1026@flinxx.com',
