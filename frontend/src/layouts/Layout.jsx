@@ -9,17 +9,22 @@ export default function Layout() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
     console.log('🔍 Layout: Checking auth token...')
-    console.log('Token value:', token ? `${token.substring(0, 20)}...` : 'NOT FOUND')
+    const token = localStorage.getItem('adminToken')
+    const adminInfo = localStorage.getItem('adminInfo')
+    
+    console.log('🔑 Token in localStorage:', token ? `${token.substring(0, 30)}...` : 'NOT FOUND')
+    console.log('👤 Admin info in localStorage:', adminInfo ? 'FOUND' : 'NOT FOUND')
     
     if (!token) {
-      console.log('⚠️ No token found, redirecting to login')
+      console.warn('⚠️ No token found - redirecting to login')
       navigate('/login', { replace: true })
-    } else {
-      console.log('✅ Token found, setting authenticated')
-      setIsAuthenticated(true)
+      setLoading(false)
+      return
     }
+    
+    console.log('✅ Token verified - user is authenticated')
+    setIsAuthenticated(true)
     setLoading(false)
   }, [navigate])
 
