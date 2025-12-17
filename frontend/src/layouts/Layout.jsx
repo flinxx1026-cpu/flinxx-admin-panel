@@ -10,9 +10,14 @@ export default function Layout() {
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken')
+    console.log('🔍 Layout: Checking auth token...')
+    console.log('Token value:', token ? `${token.substring(0, 20)}...` : 'NOT FOUND')
+    
     if (!token) {
+      console.log('⚠️ No token found, redirecting to login')
       navigate('/login', { replace: true })
     } else {
+      console.log('✅ Token found, setting authenticated')
       setIsAuthenticated(true)
     }
     setLoading(false)

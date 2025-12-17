@@ -23,13 +23,28 @@ export default function Login() {
     setError('')
 
     try {
+      console.log('📤 Sending login request...')
       const response = await api.post('/admin/login', credentials)
+      console.log('📥 Login response:', response.status, response.data)
+      
+      if (!response.data.token) {
+        console.error('❌ Token missing from response:', response.data)
+        setError('Login failed: No token received')
+        setLoading(false)
+        return
+      }
+      
+      console.log('💾 Storing token in localStorage...')
       localStorage.setItem('adminToken', response.data.token)
       localStorage.setItem('adminInfo', JSON.stringify(response.data.admin))
+      console.log('✅ Token stored. Redirecting to dashboard...')
+      
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed')
-    } finally {
+      console.error('❌ Login error:', err)
+      const message = err.response?.data?.message || err.message || 'Login failed'
+      console.log('Error message:', message)
+      setError(message)
       setLoading(false)
     }
   }
