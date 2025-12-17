@@ -16,11 +16,15 @@ router.post('/create-admin', async (req, res) => {
     })
     console.log('Deleted existing admin if present')
     
-    // Create admin user with correct bcrypt hash
+    // Hash the password using bcryptjs with 10 salt rounds
+    const hashedPassword = bcryptjs.hashSync('nkhlydv', 10)
+    console.log('✅ Password hashed with bcryptjs')
+    
+    // Create admin user with properly hashed password
     const admin = await prisma.admin.create({
       data: {
         email: 'Nikhilyadav1026@flinxx.com',
-        password: '$2a$10$hw//L5nGXC7fMrTjFOWnHOZJ5XTPJ9PhabzGX4GqLwYClj0haZFae',
+        password: hashedPassword,
         role: 'ADMIN'
       }
     })
@@ -46,27 +50,11 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body
     console.log('🔐 Login attempt:', { email, passwordProvided: !!password })
 
-    let admin = null
-    
-    try {
-      // Try to find admin in database
-      admin = await prisma.admin.findUnique({
-        where: { email }
-      })
-      console.log('📊 Database query result:', admin ? 'Admin found' : 'Admin not found')
-    } catch (dbError) {
-      console.error('⚠️ Database error:', dbError.message)
-      // If database query fails, use fallback
-      if (email === 'Nikhilyadav1026@flinxx.com' && password === 'nkhlydv') {
-        console.log('✅ Using fallback authentication')
-        admin = {
-          id: 1,
-          email: 'Nikhilyadav1026@flinxx.com',
-          password: '$2a$10$hw//L5nGXC7fMrTjFOWnHOZJ5XTPJ9PhabzGX4GqLwYClj0haZFae',
-          role: 'ADMIN'
-        }
-      }
-    }
+    // Try to find admin in database
+    const admin = await prisma.admin.findUnique({
+      where: { email }
+    })
+    console.log('📊 Database query result:', admin ? 'Admin found' : 'Admin not found')
 
     if (!admin) {
       console.log('❌ Admin not found:', email)
