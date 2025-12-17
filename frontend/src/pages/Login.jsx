@@ -11,14 +11,22 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
+    
+    // Validate credentials before submitting
+    if (!credentials.email || !credentials.password) {
+      setError('Please enter both email and password')
+      return
+    }
+    
     setLoading(true)
     setError('')
 
     try {
-      const response = await api.post('/api/admin/login', credentials)
+      const response = await api.post('/admin/login', credentials)
       localStorage.setItem('adminToken', response.data.token)
       localStorage.setItem('adminInfo', JSON.stringify(response.data.admin))
-      navigate('/')
+      navigate('/dashboard', { replace: true })
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed')
     } finally {
@@ -51,8 +59,14 @@ export default function Login() {
                 type="email"
                 value={credentials.email}
                 onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && credentials.password) {
+                    handleSubmit(e)
+                  }
+                }}
                 className="w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2 text-dark-100 placeholder-dark-400 focus:outline-none focus:border-purple-500"
                 placeholder="admin@flinxx.com"
+                disabled={loading}
               />
             </div>
 
@@ -62,8 +76,14 @@ export default function Login() {
                 type="password"
                 value={credentials.password}
                 onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && credentials.email) {
+                    handleSubmit(e)
+                  }
+                }}
                 className="w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2 text-dark-100 placeholder-dark-400 focus:outline-none focus:border-purple-500"
                 placeholder="••••••••"
+                disabled={loading}
               />
             </div>
 

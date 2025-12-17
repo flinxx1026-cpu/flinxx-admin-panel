@@ -11,7 +11,7 @@ export default function Layout() {
   useEffect(() => {
     const token = localStorage.getItem('adminToken')
     if (!token) {
-      navigate('/login')
+      navigate('/login', { replace: true })
     } else {
       setIsAuthenticated(true)
     }
