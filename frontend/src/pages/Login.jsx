@@ -114,10 +114,6 @@ export default function Login() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-
-          <p className="text-center text-dark-400 text-sm mt-6">
-            Demo credentials: admin@flinxx.com / password
-          </p>
         </div>
       </div>
     </div>
