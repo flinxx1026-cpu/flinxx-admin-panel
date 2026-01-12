@@ -11,9 +11,8 @@ router.get('/', async (req, res) => {
       const users = await prisma.user.findMany({
         where: {
           OR: [
-            { id: isNaN(parseInt(search)) ? undefined : parseInt(search) },
             { email: { contains: search, mode: 'insensitive' } },
-            { username: { contains: search, mode: 'insensitive' } }
+            { display_name: { contains: search, mode: 'insensitive' } }
           ]
         },
         orderBy: { createdAt: 'desc' }
