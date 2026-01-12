@@ -14,6 +14,8 @@ export default function Dashboard() {
   })
   const [chartData, setChartData] = useState([])
   const [revenueData, setRevenueData] = useState([])
+  const [userDistribution, setUserDistribution] = useState([])
+  const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -26,6 +28,8 @@ export default function Dashboard() {
       setStats(response.data.stats)
       setChartData(response.data.userActivity)
       setRevenueData(response.data.revenueData)
+      setUserDistribution(response.data.userDistribution)
+      setRecentActivity(response.data.recentActivity)
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
     } finally {
@@ -34,6 +38,20 @@ export default function Dashboard() {
   }
 
   const COLORS = ['#9333ea', '#7c3aed', '#6d28d9', '#5b21b6']
+
+  const getTimeAgo = (timestamp) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'just now'
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+  }
 
   if (loading) {
     return <div className="text-center py-8">Loading dashboard...</div>
@@ -72,7 +90,7 @@ export default function Dashboard() {
         <StatCard
           icon={TrendingUp}
           title="Revenue"
-          value={`$${stats.revenue}`}
+          value={`$${stats.revenue.toFixed(2)}`}
           change="+15%"
           trend="up"
           color="bg-yellow-900/30"
@@ -135,15 +153,25 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-dark-800 border border-dark-700 rounded-lg p-6">
           <h2 className="text-lg font-semibold text-dark-100 mb-4">Recent Activity</h2>
           <div className="space-y-3 max-h-80 overflow-y-auto">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-dark-700/30 rounded-lg hover:bg-dark-700/50 transition-colors">
-                <div>
-                  <p className="text-sm font-medium text-dark-200">User activity {i + 1}</p>
-                  <p className="text-xs text-dark-400">2 minutes ago</p>
+            {recentActivity.length > 0 ? (
+              recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center justify-between p-3 bg-dark-700/30 rounded-lg hover:bg-dark-700/50 transition-colors">
+                  <div>
+                    <p className="text-sm font-medium text-dark-200">{activity.description}</p>
+                    <p className="text-xs text-dark-400">{getTimeAgo(activity.timestamp)}</p>
+                  </div>
+                  <span className={`px-3 py-1 text-xs rounded-full ${
+                    activity.type === 'Session' ? 'bg-blue-900/30 text-blue-300' :
+                    activity.type === 'Report' ? 'bg-red-900/30 text-red-300' :
+                    'bg-green-900/30 text-green-300'
+                  }`}>
+                    {activity.type}
+                  </span>
                 </div>
-                <span className="px-3 py-1 bg-blue-900/30 text-blue-300 text-xs rounded-full">New</span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-dark-400">No recent activity</div>
+            )}
           </div>
         </div>
 
@@ -152,12 +180,7 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
-                data={[
-                  { name: 'Active', value: 65 },
-                  { name: 'Inactive', value: 20 },
-                  { name: 'Suspended', value: 10 },
-                  { name: 'Banned', value: 5 },
-                ]}
+                data={userDistribution}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
