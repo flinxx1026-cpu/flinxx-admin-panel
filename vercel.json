@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "projectSettings": {
+    "installCommand": "npm install",
+    "buildCommand": "npm run build:frontend",
+    "outputDirectory": "frontend/dist"
+  },
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-builds",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "frontend/index.html",
+      "status": 200
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "@vite_api_url"
+  }
+}
