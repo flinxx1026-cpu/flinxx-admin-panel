@@ -87,60 +87,72 @@ export default function UserManagement() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr key={user._id} className="border-b border-dark-700 hover:bg-dark-700/30 transition-colors">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-dark-100">{user.username}</p>
-                      <p className="text-xs text-dark-400">{user._id}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-dark-300">{user.email}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      user.status === 'active' ? 'bg-green-900/30 text-green-300' :
-                      user.status === 'banned' ? 'bg-red-900/30 text-red-300' :
-                      'bg-yellow-900/30 text-yellow-300'
-                    }`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-dark-300">{new Date(user.createdAt).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 text-dark-300">{user.coins}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleAction(user, 'view')}
-                        className="p-2 hover:bg-dark-600 rounded transition-colors text-blue-400"
-                        title="View Profile"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleAction(user, 'warn')}
-                        className="p-2 hover:bg-dark-600 rounded transition-colors text-yellow-400"
-                        title="Send Warning"
-                      >
-                        <AlertCircle size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleAction(user, 'ban')}
-                        className="p-2 hover:bg-dark-600 rounded transition-colors text-red-400"
-                        title="Ban User"
-                      >
-                        <Ban size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleAction(user, 'reset-coins')}
-                        className="p-2 hover:bg-dark-600 rounded transition-colors text-purple-400"
-                        title="Reset Coins"
-                      >
-                        <RotateCcw size={18} />
-                      </button>
+              {users.length > 0 ? (
+                users.map((user) => (
+                  <tr key={user._id} className="border-b border-dark-700 hover:bg-dark-700/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium text-dark-100">{user.username}</p>
+                        <p className="text-xs text-dark-400">{user._id}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-dark-300">{user.email}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        user.status === 'active' ? 'bg-green-900/30 text-green-300' :
+                        user.status === 'banned' ? 'bg-red-900/30 text-red-300' :
+                        'bg-yellow-900/30 text-yellow-300'
+                      }`}>
+                        {user.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-dark-300">{new Date(user.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-dark-300">{user.coins}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleAction(user, 'view')}
+                          className="p-2 hover:bg-dark-600 rounded transition-colors text-blue-400"
+                          title="View Profile"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleAction(user, 'warn')}
+                          className="p-2 hover:bg-dark-600 rounded transition-colors text-yellow-400"
+                          title="Send Warning"
+                        >
+                          <AlertCircle size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleAction(user, 'ban')}
+                          className="p-2 hover:bg-dark-600 rounded transition-colors text-red-400"
+                          title="Ban User"
+                        >
+                          <Ban size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleAction(user, 'reset-coins')}
+                          className="p-2 hover:bg-dark-600 rounded transition-colors text-purple-400"
+                          title="Reset Coins"
+                        >
+                          <RotateCcw size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="px-6 py-8 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <AlertCircle className="text-dark-400" size={32} />
+                      <p className="text-dark-400">No users found</p>
+                      {search && <p className="text-sm text-dark-500">Try adjusting your search filters</p>}
                     </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

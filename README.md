@@ -220,6 +220,27 @@ admin-panel/
 4. Push to the branch
 5. Create a Pull Request
 
+## 🗑️ Database Cleanup (Production)
+
+If you need to remove demo/seeded data from production:
+
+```bash
+cd backend
+
+# 1. Verify current database state
+npm run verify-db
+
+# 2. Cleanup seeded data (after backup!)
+npm run cleanup-production
+
+# 3. Verify cleanup was successful
+npm run verify-db
+```
+
+**Important**: Always backup your database before running cleanup!
+
+See [PRODUCTION_CLEANUP.md](./PRODUCTION_CLEANUP.md) and [CLEANUP_QUICK_REFERENCE.md](./CLEANUP_QUICK_REFERENCE.md) for detailed instructions.
+
 ## License
 
 MIT
@@ -227,3 +248,5 @@ MIT
 ## Support
 
 For support, email support@flinxx.com or create an issue in the repository.
+
+**⚠️ Security Note**: Never run `npm run seed` on production database. Use dedicated cleanup and verification scripts instead.
