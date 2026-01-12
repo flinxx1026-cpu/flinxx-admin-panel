@@ -1,27 +1,20 @@
 {
   "version": 2,
-  "projectSettings": {
-    "installCommand": "npm install",
-    "buildCommand": "npm run build:frontend",
-    "outputDirectory": "frontend/dist"
-  },
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-builds",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "frontend/index.html",
-      "status": 200
-    }
-  ],
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "framework": "vite",
   "env": {
     "VITE_API_URL": "@vite_api_url"
-  }
+  },
+  "routes": [
+    {
+      "src": "/api/(?<path>.*)",
+      "status": 404
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html",
+      "status": 200
+    }
+  ]
 }
