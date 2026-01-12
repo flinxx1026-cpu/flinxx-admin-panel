@@ -1,0 +1,42 @@
+[2026-01-12T09:38:24.553Z] ========== PRODUCTION CLEANUP STARTED ==========
+[2026-01-12T09:38:24.555Z] Timestamp: 2026-01-12T09:38:24.553Z
+[2026-01-12T09:38:24.556Z] 
+[2026-01-12T09:38:24.556Z] 📊 Getting pre-cleanup statistics...
+[2026-01-12T09:38:26.140Z] Pre-cleanup counts:
+[2026-01-12T09:38:26.141Z]   - Users: 100
+[2026-01-12T09:38:26.141Z]   - Sessions: 48
+[2026-01-12T09:38:26.142Z]   - Payments: 30
+[2026-01-12T09:38:26.142Z]   - Reports: 25
+[2026-01-12T09:38:26.143Z]   - Admins: 1
+[2026-01-12T09:38:26.143Z] 
+[2026-01-12T09:38:26.144Z] 🗑️  Starting data deletion (reverse dependency order)...
+[2026-01-12T09:38:26.146Z] Deleting Sessions...
+[2026-01-12T09:38:26.333Z] ✅ Deleted 48 sessions
+[2026-01-12T09:38:26.334Z] Deleting Payments...
+[2026-01-12T09:38:26.518Z] ✅ Deleted 30 payments
+[2026-01-12T09:38:26.519Z] Deleting Reports...
+[2026-01-12T09:38:26.703Z] ✅ Deleted 25 reports
+[2026-01-12T09:38:26.703Z] Deleting Users...
+[2026-01-12T09:38:26.889Z] ✅ Deleted 100 users
+[2026-01-12T09:38:26.889Z] Preserving Admin account...
+[2026-01-12T09:38:26.980Z] ✅ Admin account preserved (1 admin(s) remain)
+[2026-01-12T09:38:26.981Z] 
+[2026-01-12T09:38:26.981Z] 📊 Getting post-cleanup statistics...
+[2026-01-12T09:38:27.463Z] Post-cleanup counts:
+[2026-01-12T09:38:27.464Z]   - Users: 0
+[2026-01-12T09:38:27.464Z]   - Sessions: 0
+[2026-01-12T09:38:27.465Z]   - Payments: 0
+[2026-01-12T09:38:27.465Z]   - Reports: 0
+[2026-01-12T09:38:27.466Z]   - Admins: 1
+[2026-01-12T09:38:27.466Z] 
+[2026-01-12T09:38:27.467Z] ========== CLEANUP SUMMARY ==========
+[2026-01-12T09:38:27.467Z] Deleted records:
+[2026-01-12T09:38:27.467Z]   - 100 Users → 0 remaining
+[2026-01-12T09:38:27.468Z]   - 48 Sessions → 0 remaining
+[2026-01-12T09:38:27.468Z]   - 30 Payments → 0 remaining
+[2026-01-12T09:38:27.469Z]   - 25 Reports → 0 remaining
+[2026-01-12T09:38:27.470Z]   - Admin account: PRESERVED (1)
+[2026-01-12T09:38:27.470Z] 
+[2026-01-12T09:38:27.470Z] ✅ CLEANUP COMPLETED SUCCESSFULLY
+[2026-01-12T09:38:27.471Z] Log file: cleanup_log_2026-01-12T09-38-24-553Z.txt
+[2026-01-12T09:38:27.471Z] ========== END OF CLEANUP ==========
