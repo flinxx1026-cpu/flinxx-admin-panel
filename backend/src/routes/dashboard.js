@@ -140,6 +140,8 @@ async function getRecentActivity() {
 
 router.get('/', async (req, res) => {
   try {
+    console.log('📊 Dashboard API called - Fetching data from database...')
+    
     // Get real stats from database
     const activeUsers = await prisma.user.count({
       where: { banned: false }
@@ -175,7 +177,7 @@ router.get('/', async (req, res) => {
     const userDistribution = await getUserDistribution()
     const recentActivity = await getRecentActivity()
 
-    res.json({
+    const responseData = {
       stats: {
         activeUsers,
         ongoingSessions,
@@ -188,9 +190,19 @@ router.get('/', async (req, res) => {
       revenueData,
       userDistribution,
       recentActivity
-    })
+    }
+
+    console.log('✅ Dashboard data fetched successfully:')
+    console.log('  - Active Users:', activeUsers)
+    console.log('  - Total Users:', totalUsers)
+    console.log('  - Ongoing Sessions:', ongoingSessions)
+    console.log('  - New Signups (24h):', newSignups)
+    console.log('  - Revenue:', revenue)
+    console.log('  - Pending Reports:', reports)
+
+    res.json(responseData)
   } catch (error) {
-    console.error('Error fetching dashboard:', error)
+    console.error('❌ Error fetching dashboard:', error)
     res.status(500).json({ message: 'Error fetching dashboard data' })
   }
 })
