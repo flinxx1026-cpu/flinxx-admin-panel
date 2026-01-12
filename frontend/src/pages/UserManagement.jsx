@@ -86,7 +86,7 @@ export default function UserManagement() {
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-medium text-dark-100">{user.display_name || 'N/A'}</p>
-                        <p className="text-xs text-dark-400">ID: {user.id.substring(0, 8)}...</p>
+                        <p className="text-xs text-dark-400">ID: {String(user.id).substring(0, 8)}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-dark-300">{user.email}</td>
