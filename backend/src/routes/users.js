@@ -15,12 +15,19 @@ router.get('/', async (req, res) => {
             { email: { contains: search, mode: 'insensitive' } },
             { username: { contains: search, mode: 'insensitive' } }
           ]
-        }
+        },
+        orderBy: { createdAt: 'desc' }
       })
+      console.log(`✅ Found ${users.length} user(s) matching search: "${search}"`)
       return res.json({ users })
     }
 
-    const users = await prisma.user.findMany()
+    // Fetch all users, sorted by most recent first
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' }
+    })
+    
+    console.log(`✅ Fetched all ${users.length} users from database`)
     res.json({ users })
   } catch (error) {
     console.error('Error fetching users:', error)

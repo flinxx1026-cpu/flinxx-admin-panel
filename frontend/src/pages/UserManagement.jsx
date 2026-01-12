@@ -35,13 +35,13 @@ export default function UserManagement() {
   const performAction = async () => {
     try {
       if (modalType === 'ban') {
-        await api.post(`/admin/users/${selectedUser._id}/ban`)
+        await api.post(`/admin/users/${selectedUser.id}/ban`)
       } else if (modalType === 'warn') {
-        await api.post(`/admin/users/${selectedUser._id}/warn`)
+        await api.post(`/admin/users/${selectedUser.id}/warn`)
       } else if (modalType === 'unban') {
-        await api.post(`/admin/users/${selectedUser._id}/unban`)
+        await api.post(`/admin/users/${selectedUser.id}/unban`)
       } else if (modalType === 'reset-coins') {
-        await api.post(`/admin/users/${selectedUser._id}/reset-coins`)
+        await api.post(`/admin/users/${selectedUser.id}/reset-coins`)
       }
       setShowModal(false)
       fetchUsers()
@@ -89,21 +89,21 @@ export default function UserManagement() {
             <tbody>
               {users.length > 0 ? (
                 users.map((user) => (
-                  <tr key={user._id} className="border-b border-dark-700 hover:bg-dark-700/30 transition-colors">
+                  <tr key={user.id} className="border-b border-dark-700 hover:bg-dark-700/30 transition-colors">
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-medium text-dark-100">{user.username}</p>
-                        <p className="text-xs text-dark-400">{user._id}</p>
+                        <p className="text-xs text-dark-400">ID: {user.id}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-dark-300">{user.email}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        user.status === 'active' ? 'bg-green-900/30 text-green-300' :
-                        user.status === 'banned' ? 'bg-red-900/30 text-red-300' :
+                        user.banned ? 'bg-red-900/30 text-red-300' :
+                        user.verified ? 'bg-green-900/30 text-green-300' :
                         'bg-yellow-900/30 text-yellow-300'
                       }`}>
-                        {user.status}
+                        {user.banned ? 'Banned' : user.verified ? 'Verified' : 'Unverified'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-dark-300">{new Date(user.createdAt).toLocaleDateString()}</td>
