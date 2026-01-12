@@ -23,15 +23,13 @@ model Admin {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   email     String   @unique
-  username  String   @unique
-  password  String
-  verified  Boolean  @default(false)
-  banned    Boolean  @default(false)
-  coins     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  display_name  String?
+  photo_url String?
+  auth_provider String?
+
+  @@map("users")
 }
 
 model Report {
