@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { connectDB } from './config/database.js'
+import authRoutes from './routes/auth.js'
 import adminRoutes from './routes/admin.js'
 import dashboardRoutes from './routes/dashboard.js'
 import usersRoutes from './routes/users.js'
@@ -39,6 +40,7 @@ app.use(express.json())
 connectDB()
 
 // Routes
+app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/admin/dashboard', dashboardRoutes)
 app.use('/api/admin/users', usersRoutes)
