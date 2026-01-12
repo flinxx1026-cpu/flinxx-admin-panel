@@ -34,15 +34,8 @@ export default function UserManagement() {
 
   const performAction = async () => {
     try {
-      if (modalType === 'ban') {
-        await api.post(`/admin/users/${selectedUser.id}/ban`)
-      } else if (modalType === 'warn') {
-        await api.post(`/admin/users/${selectedUser.id}/warn`)
-      } else if (modalType === 'unban') {
-        await api.post(`/admin/users/${selectedUser.id}/unban`)
-      } else if (modalType === 'reset-coins') {
-        await api.post(`/admin/users/${selectedUser.id}/reset-coins`)
-      }
+      // Currently no backend actions available for this user data structure
+      // Actions can be implemented as needed
       setShowModal(false)
       fetchUsers()
     } catch (error) {
@@ -92,22 +85,20 @@ export default function UserManagement() {
                   <tr key={user.id} className="border-b border-dark-700 hover:bg-dark-700/30 transition-colors">
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-medium text-dark-100">{user.username}</p>
-                        <p className="text-xs text-dark-400">ID: {user.id}</p>
+                        <p className="font-medium text-dark-100">{user.display_name || 'N/A'}</p>
+                        <p className="text-xs text-dark-400">ID: {user.id.substring(0, 8)}...</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-dark-300">{user.email}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        user.banned ? 'bg-red-900/30 text-red-300' :
-                        user.verified ? 'bg-green-900/30 text-green-300' :
-                        'bg-yellow-900/30 text-yellow-300'
+                        user.auth_provider ? 'bg-green-900/30 text-green-300' : 'bg-yellow-900/30 text-yellow-300'
                       }`}>
-                        {user.banned ? 'Banned' : user.verified ? 'Verified' : 'Unverified'}
+                        {user.auth_provider ? 'Verified' : 'Unverified'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-dark-300">{new Date(user.createdAt).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 text-dark-300">{user.coins}</td>
+                    <td className="px-6 py-4 text-sm text-dark-300">-</td>
+                    <td className="px-6 py-4 text-dark-300">-</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
@@ -116,27 +107,6 @@ export default function UserManagement() {
                           title="View Profile"
                         >
                           <Eye size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleAction(user, 'warn')}
-                          className="p-2 hover:bg-dark-600 rounded transition-colors text-yellow-400"
-                          title="Send Warning"
-                        >
-                          <AlertCircle size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleAction(user, 'ban')}
-                          className="p-2 hover:bg-dark-600 rounded transition-colors text-red-400"
-                          title="Ban User"
-                        >
-                          <Ban size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleAction(user, 'reset-coins')}
-                          className="p-2 hover:bg-dark-600 rounded transition-colors text-purple-400"
-                          title="Reset Coins"
-                        >
-                          <RotateCcw size={18} />
                         </button>
                       </div>
                     </td>
