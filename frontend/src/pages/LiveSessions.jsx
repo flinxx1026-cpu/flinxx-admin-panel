@@ -12,7 +12,7 @@ export default function LiveSessions() {
 
   const fetchSessions = async () => {
     try {
-      const response = await api.get('/api/admin/sessions')
+      const response = await api.get('/admin/sessions')
       setSessions(response.data.sessions || [])
     } catch (error) {
       console.error('Failed to fetch sessions:', error)
@@ -23,7 +23,7 @@ export default function LiveSessions() {
 
   const handleDisconnect = async (sessionId) => {
     try {
-      await api.post(`/api/admin/sessions/${sessionId}/disconnect`)
+      await api.post(`/admin/sessions/${sessionId}/disconnect`)
       fetchSessions()
     } catch (error) {
       console.error('Failed to disconnect session:', error)

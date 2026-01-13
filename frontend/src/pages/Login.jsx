@@ -24,7 +24,7 @@ export default function Login() {
 
     try {
       console.log('📤 Sending login request...', credentials)
-      const response = await api.post('/api/admin/login', credentials)
+      const response = await api.post('/admin/login', credentials)
       console.log('📥 Login response:', response.status)
       console.log('📦 Full response.data:', response.data)
       console.log('🔑 Token at response.data.token:', response.data.token)

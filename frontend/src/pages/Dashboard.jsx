@@ -24,7 +24,7 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await api.get('/api/admin/dashboard')
+      const response = await api.get('/admin/dashboard')
       setStats(response.data.stats)
       setChartData(response.data.userActivity)
       setRevenueData(response.data.revenueData)

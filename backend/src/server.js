@@ -30,24 +30,13 @@ const allowedOrigins = [
   "http://localhost:3001",
   process.env.FRONTEND_URL,
   process.env.ADMIN_PANEL_URL
-].filter(origin => origin) // Filter out undefined/null values
+].filter(origin => origin)
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (Postman, mobile apps, etc)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`🚫 CORS blocked origin: ${origin}`)
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200
 }
 
 const io = new Server(httpServer, {
@@ -60,8 +49,8 @@ app.use(cors(corsOptions));
 
 console.log("✅ CORS Enabled for Origins:", allowedOrigins);
 
-// ⚠️ VERY IMPORTANT: Handle preflight requests
-app.options('*', cors(corsOptions));
+// VERY IMPORTANT: Handle preflight requests
+app.options('*', cors());
 
 app.use(express.json())
 

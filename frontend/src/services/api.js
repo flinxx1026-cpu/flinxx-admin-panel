@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001') + '/api'
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -59,7 +59,7 @@ export const checkBanStatus = async () => {
       return { is_banned: false }
     }
 
-    const response = await api.post('/api/auth/check-ban')
+    const response = await api.post('/auth/check-ban')
     console.log('✅ Ban status check:', response.data)
     
     if (response.data.is_banned) {

@@ -17,7 +17,7 @@ export default function ReportsHandling() {
 
   const fetchReports = async () => {
     try {
-      const response = await api.get(`/api/admin/reports?search=${search}`)
+      const response = await api.get(`/admin/reports?search=${search}`)
       setReports(response.data.reports || [])
     } catch (error) {
       console.error('Failed to fetch reports:', error)
@@ -34,7 +34,7 @@ export default function ReportsHandling() {
 
   const executeAction = async () => {
     try {
-      await api.post(`/api/admin/reports/${selectedReport.id}/${modalAction}`)
+      await api.post(`/admin/reports/${selectedReport.id}/${modalAction}`)
       setShowModal(false)
       fetchReports()
     } catch (error) {

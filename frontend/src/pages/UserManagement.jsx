@@ -19,7 +19,7 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const response = await api.get(`/api/admin/users?search=${search}`)
+      const response = await api.get(`/admin/users?search=${search}`)
       setUsers(response.data.users || response.data)
       setLoading(false)
     } catch (error) {
@@ -47,13 +47,13 @@ export default function UserManagement() {
 
       if (modalType === 'warn') {
         console.log(`📤 Sending warning to user: ${userId}`)
-        response = await api.post(`/api/admin/users/${userId}/warn`, {
+        response = await api.post(`/admin/users/${userId}/warn`, {
           warning_message: 'You have received a warning from an admin. Please review our community guidelines.'
         })
         setActionMessage('✅ Warning sent successfully')
       } else if (modalType === 'ban') {
         console.log(`📤 Banning user: ${userId}`)
-        response = await api.post(`/api/admin/users/${userId}/ban`, {
+        response = await api.post(`/admin/users/${userId}/ban`, {
           ban_reason: 'Banned by admin'
         })
         setActionMessage('✅ User has been banned')
