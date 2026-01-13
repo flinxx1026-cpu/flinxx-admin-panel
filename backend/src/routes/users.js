@@ -4,6 +4,25 @@ import { verifyAdminToken } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
+// Debug route - raw SQL test
+router.get('/debug/sql-test', async (req, res) => {
+  try {
+    console.log('🧪 Raw SQL test endpoint called')
+    const result = await prisma.$queryRaw`SELECT id, email, display_name FROM "users" LIMIT 5`
+    res.json({ 
+      success: true,
+      data: result
+    })
+  } catch (error) {
+    console.error('🧪 Raw SQL test failed:', error)
+    res.status(500).json({ 
+      success: false,
+      error: error.message,
+      stack: error.stack
+    })
+  }
+})
+
 // Debug route - test database without auth
 router.get('/debug/test', async (req, res) => {
   try {
@@ -31,45 +50,28 @@ router.get('/', async (req, res) => {
     const { search } = req.query
     console.log(`📨 Users endpoint called with search: "${search || 'none'}"`)
 
-    // First, test basic database connectivity
-    const testCount = await prisma.user.count()
-    console.log(`✅ Database count test passed: ${testCount} users`)
-
+    // Use raw SQL to avoid any relation loading issues
+    let users
     if (search && search.trim()) {
       console.log(`🔍 Searching for users with query: "${search}"`)
-      const users = await prisma.user.findMany({
-        where: {
-          OR: [
-            { email: { contains: search, mode: 'insensitive' } },
-            { display_name: { contains: search, mode: 'insensitive' } }
-          ]
-        },
-        select: {
-          id: true,
-          email: true,
-          display_name: true,
-          created_at: true
-        }
-      })
+      users = await prisma.$queryRaw`
+        SELECT id, email, display_name, photo_url, created_at, age, gender 
+        FROM "users" 
+        WHERE email ILIKE ${'%' + search + '%'} OR display_name ILIKE ${'%' + search + '%'}
+        LIMIT 100
+      `
       console.log(`✅ Found ${users.length} user(s) matching search: "${search}"`)
-      return res.json({ users })
+    } else {
+      // Fetch all users
+      console.log('📥 Fetching all users from database...')
+      users = await prisma.$queryRaw`
+        SELECT id, email, display_name, photo_url, created_at, age, gender 
+        FROM "users" 
+        LIMIT 100
+      `
+      console.log(`✅ Fetched all ${users.length} users from database`)
     }
-
-    // Fetch all users - use select to only get needed fields and avoid potential issues
-    console.log('📥 Fetching all users from database...')
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        display_name: true,
-        photo_url: true,
-        created_at: true,
-        age: true,
-        gender: true
-      }
-    })
     
-    console.log(`✅ Fetched all ${users.length} users from database`)
     res.json({ users })
   } catch (error) {
     console.error('❌ Error fetching users:', error)
@@ -80,7 +82,7 @@ router.get('/', async (req, res) => {
       message: 'Error fetching users', 
       error: error.message,
       code: error.code,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: error.stack
     })
   }
 })
