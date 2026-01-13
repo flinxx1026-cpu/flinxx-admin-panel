@@ -115,13 +115,13 @@ io.on('connection', (socket) => {
   })
 })
 
-// Routes
+// Routes - More specific routes FIRST
 app.use('/api/auth', authRoutes)
-app.use('/api/admin', adminRoutes)
 app.use('/api/admin/dashboard', dashboardRoutes)
 app.use('/api/admin/users', usersRoutes(io))
 app.use('/api/admin/reports', reportsRoutes)
 app.use('/api/admin/settings', settingsRoutes)
+app.use('/api/admin', adminRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {
