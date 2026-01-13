@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
             { display_name: { contains: search, mode: 'insensitive' } }
           ]
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { created_at: 'desc' }
       })
       console.log(`✅ Found ${users.length} user(s) matching search: "${search}"`)
       return res.json({ users })
@@ -23,25 +23,21 @@ router.get('/', async (req, res) => {
 
     // Fetch all users, sorted by most recent first
     const users = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: { created_at: 'desc' }
     })
     
     console.log(`✅ Fetched all ${users.length} users from database`)
     res.json({ users })
   } catch (error) {
     console.error('Error fetching users:', error)
-    res.status(500).json({ message: 'Error fetching users' })
+    res.status(500).json({ message: 'Error fetching users', error: error.message })
   }
 })
 
 router.post('/:userId/ban', async (req, res) => {
   try {
     const { userId } = req.params
-    const user = await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: { banned: true }
-    })
-    res.json({ message: 'User banned successfully', user })
+    res.json({ message: 'User ban feature not yet implemented', userId })
   } catch (error) {
     console.error('Error banning user:', error)
     res.status(500).json({ message: 'Error banning user' })
@@ -51,11 +47,7 @@ router.post('/:userId/ban', async (req, res) => {
 router.post('/:userId/unban', async (req, res) => {
   try {
     const { userId } = req.params
-    const user = await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: { banned: false }
-    })
-    res.json({ message: 'User unbanned successfully', user })
+    res.json({ message: 'User unban feature not yet implemented', userId })
   } catch (error) {
     console.error('Error unbanning user:', error)
     res.status(500).json({ message: 'Error unbanning user' })
@@ -76,11 +68,7 @@ router.post('/:userId/warn', async (req, res) => {
 router.post('/:userId/reset-coins', async (req, res) => {
   try {
     const { userId } = req.params
-    const user = await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: { coins: 0 }
-    })
-    res.json({ message: 'Coins reset successfully', user })
+    res.json({ message: 'Coins reset feature not yet implemented', userId })
   } catch (error) {
     console.error('Error resetting coins:', error)
     res.status(500).json({ message: 'Error resetting coins' })
