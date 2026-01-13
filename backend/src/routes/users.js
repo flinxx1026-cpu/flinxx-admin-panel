@@ -95,8 +95,9 @@ const createUsersRouter = (io) => {
     try {
       const { userId } = req.params
       const { ban_reason } = req.body
+      const adminId = req.admin?.id
       
-      console.log(`🚫 Banning user: ${userId}`)
+      console.log(`🚫 Banning user: ${userId} by admin: ${adminId}`)
       
       // Ban the user using Prisma with numeric ID
       const bannedUser = await prisma.user.update({
@@ -122,7 +123,12 @@ const createUsersRouter = (io) => {
         user: bannedUser
       })
     } catch (error) {
-      console.error('❌ Error banning user:', error)
+      console.error('❌ Error banning user:', error.message)
+      console.error('📋 Error details:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      })
       res.status(500).json({ 
         success: false,
         message: 'Error banning user',
@@ -134,8 +140,9 @@ const createUsersRouter = (io) => {
   router.post('/:userId/unban', async (req, res) => {
     try {
       const { userId } = req.params
+      const adminId = req.admin?.id
       
-      console.log(`✅ Unbanning user: ${userId}`)
+      console.log(`✅ Unbanning user: ${userId} by admin: ${adminId}`)
       
       // Unban the user using Prisma with numeric ID
       const unbannedUser = await prisma.user.update({
@@ -151,7 +158,12 @@ const createUsersRouter = (io) => {
         user: unbannedUser
       })
     } catch (error) {
-      console.error('❌ Error unbanning user:', error)
+      console.error('❌ Error unbanning user:', error.message)
+      console.error('📋 Error details:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      })
       res.status(500).json({ 
         success: false,
         message: 'Error unbanning user',
