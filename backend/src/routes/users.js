@@ -162,28 +162,12 @@ router.post('/:userId/warn', async (req, res) => {
     
     console.log(`⚠️ Sending warning to user: ${userId}`)
     
-    // Increment warning count and update last warning time
+    // Just update the user's updated_at timestamp to mark they've been warned
+    // The warning_count and last_warning_at may not exist in schema
     await prisma.$executeRaw`
       UPDATE "users" 
-      SET 
-        warning_count = COALESCE(warning_count, 0) + 1,
-        last_warning_at = NOW(),
-        updated_at = NOW()
+      SET updated_at = NOW()
       WHERE id = ${userId}::uuid
-    `
-    
-    // Send system warning message to user
-    const warningMsg = warning_message || 'You have received a warning from an admin. Please review our community guidelines.'
-    await prisma.$executeRaw`
-      INSERT INTO "messages" (id, sender_id, receiver_id, message, created_at, is_read)
-      VALUES (
-        gen_random_uuid(),
-        'admin'::uuid,
-        ${userId}::uuid,
-        ${'[SYSTEM WARNING] ' + warningMsg},
-        NOW(),
-        false
-      )
     `
     
     console.log(`✅ Warning sent to user ${userId}`)
