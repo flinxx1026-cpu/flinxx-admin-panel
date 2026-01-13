@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import jwt from 'jsonwebtoken'
 import { connectDB } from './config/database.js'
 import prisma from './config/database.js'
 import authRoutes from './routes/auth.js'
@@ -55,14 +56,34 @@ app.get('/api/health', (req, res) => {
 })
 
 // Check if user is banned
-app.post('/api/check-ban', verifyUserToken, async (req, res) => {
+app.post('/api/check-ban', async (req, res) => {
   try {
-    const userId = req.user?.id
+    const token = req.headers.authorization?.split(' ')[1]
+
+    if (!token) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'No token provided'
+      })
+    }
+
+    // Verify token
+    let decoded
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key')
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token'
+      })
+    }
+
+    const userId = decoded.id
     
     if (!userId) {
       return res.status(400).json({ 
         success: false,
-        message: 'No user ID found'
+        message: 'No user ID in token'
       })
     }
 
