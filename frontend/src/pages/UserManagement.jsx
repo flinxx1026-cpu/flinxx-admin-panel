@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Ban, AlertCircle, Trash2, RotateCcw, Eye } from 'lucide-react'
+import { Search, Ban, AlertCircle } from 'lucide-react'
 import api from '../services/api'
 import Modal from '../components/Modal'
 
@@ -92,13 +92,6 @@ export default function UserManagement() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleAction(user, 'view')}
-                          className="p-2 hover:bg-dark-600 rounded transition-colors text-blue-400"
-                          title="View Profile"
-                        >
-                          <Eye size={18} />
-                        </button>
-                        <button
                           onClick={() => handleAction(user, 'warn')}
                           className="p-2 hover:bg-dark-600 rounded transition-colors text-yellow-400"
                           title="Send Warning"
@@ -111,13 +104,6 @@ export default function UserManagement() {
                           title="Ban User"
                         >
                           <Ban size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleAction(user, 'reset-coins')}
-                          className="p-2 hover:bg-dark-600 rounded transition-colors text-purple-400"
-                          title="Reset Coins"
-                        >
-                          <RotateCcw size={18} />
                         </button>
                       </div>
                     </td>
