@@ -72,22 +72,21 @@ async function getRevenueData() {
 // Helper function to get user distribution
 async function getUserDistribution() {
   const totalUsers = await prisma.user.count()
-  const activeUsers = await prisma.user.count({
-    where: { banned: false }
-  })
-  const bannedUsers = await prisma.user.count({
-    where: { banned: true }
-  })
   
-  const inactiveUsers = Math.max(0, totalUsers - activeUsers - bannedUsers)
-  const suspendedUsers = Math.max(0, inactiveUsers - Math.floor(inactiveUsers * 0.5))
-  const actualInactive = inactiveUsers - suspendedUsers
+  // Since the actual user schema doesn't have 'banned' or 'status' fields,
+  // we'll calculate distribution based on profile completion status
+  const profileCompletedUsers = await prisma.user.count({
+    where: { profileCompleted: true }
+  })
+  const profileIncompleteUsers = totalUsers - profileCompletedUsers
+  const activeUsers = profileCompletedUsers
+  const inactiveUsers = profileIncompleteUsers
 
   return [
     { name: 'Active', value: activeUsers },
-    { name: 'Inactive', value: actualInactive },
-    { name: 'Suspended', value: suspendedUsers },
-    { name: 'Banned', value: bannedUsers }
+    { name: 'Inactive', value: inactiveUsers },
+    { name: 'Suspended', value: 0 },
+    { name: 'Banned', value: 0 }
   ]
 }
 
@@ -110,8 +109,8 @@ async function getRecentActivity() {
   // Get recent signups
   const recentSignups = await prisma.user.findMany({
     take: 2,
-    orderBy: { createdAt: 'desc' },
-    select: { id: true, username: true, createdAt: true }
+    orderBy: { created_at: 'desc' },
+    select: { id: true, display_name: true, created_at: true }
   })
 
   const activities = [
@@ -130,8 +129,8 @@ async function getRecentActivity() {
     ...recentSignups.map(u => ({
       id: `signup-${u.id}`,
       type: 'Signup',
-      description: `New user: ${u.username}`,
-      timestamp: u.createdAt
+      description: `New user: ${u.display_name || 'Unknown'}`,
+      timestamp: u.created_at
     }))
   ]
 
@@ -143,10 +142,6 @@ router.get('/', async (req, res) => {
     console.log('📊 Dashboard API called - Fetching data from database...')
     
     // Get real stats from database
-    const activeUsers = await prisma.user.count({
-      where: { banned: false }
-    })
-
     const totalUsers = await prisma.user.count()
 
     const ongoingSessions = await prisma.session.count({
@@ -155,7 +150,7 @@ router.get('/', async (req, res) => {
 
     const newSignups = await prisma.user.count({
       where: {
-        createdAt: {
+        created_at: {
           gte: new Date(new Date().setDate(new Date().getDate() - 1))
         }
       }
@@ -176,6 +171,11 @@ router.get('/', async (req, res) => {
     const revenueData = await getRevenueData()
     const userDistribution = await getUserDistribution()
     const recentActivity = await getRecentActivity()
+
+    // Calculate active users based on profile completion
+    const activeUsers = await prisma.user.count({
+      where: { profileCompleted: true }
+    })
 
     const responseData = {
       stats: {
