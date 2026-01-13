@@ -52,6 +52,23 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'Admin Panel API is running' })
 })
 
+// Database health check
+app.get('/api/db-health', async (req, res) => {
+  try {
+    const result = await prisma.$queryRaw`SELECT NOW()`
+    res.json({ 
+      status: 'Database connection is healthy',
+      timestamp: result[0]?.now
+    })
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message)
+    res.status(500).json({ 
+      status: 'Database connection failed',
+      error: error.message
+    })
+  }
+})
+
 // Error handling
 app.use(errorHandler)
 

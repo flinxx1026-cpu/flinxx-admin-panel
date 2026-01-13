@@ -4,7 +4,28 @@ import { verifyAdminToken } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
-// Protect all routes with authentication
+// Debug route - test database without auth
+router.get('/debug/test', async (req, res) => {
+  try {
+    console.log('🧪 Debug test endpoint called')
+    const count = await prisma.user.count()
+    const sample = await prisma.user.findFirst()
+    res.json({ 
+      success: true,
+      totalUsers: count,
+      sampleUser: sample
+    })
+  } catch (error) {
+    console.error('🧪 Debug test failed:', error)
+    res.status(500).json({ 
+      success: false,
+      error: error.message,
+      stack: error.stack
+    })
+  }
+})
+
+// Protect all other routes with authentication
 router.use(verifyAdminToken)
 
 router.get('/', async (req, res) => {
