@@ -26,7 +26,7 @@ export const verifyAdminToken = async (req, res, next) => {
     next()
   } catch (error) {
     console.error('🔐 Admin token verification failed:', error.message)
-    res.status(401).json({ message: 'Invalid or expired token' })
+    return res.status(401).json({ message: 'Invalid or expired token' })
   }
 }
 
@@ -69,7 +69,7 @@ export const verifyUserToken = async (req, res, next) => {
     next()
   } catch (error) {
     console.error('🔐 User token verification failed:', error.message)
-    res.status(401).json({ message: 'Invalid or expired token' })
+    return res.status(401).json({ message: 'Invalid or expired token' })
   }
 }
 
