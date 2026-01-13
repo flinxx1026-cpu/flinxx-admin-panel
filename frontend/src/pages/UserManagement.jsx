@@ -98,6 +98,27 @@ export default function UserManagement() {
                         >
                           <Eye size={18} />
                         </button>
+                        <button
+                          onClick={() => handleAction(user, 'warn')}
+                          className="p-2 hover:bg-dark-600 rounded transition-colors text-yellow-400"
+                          title="Send Warning"
+                        >
+                          <AlertCircle size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleAction(user, 'ban')}
+                          className="p-2 hover:bg-dark-600 rounded transition-colors text-red-400"
+                          title="Ban User"
+                        >
+                          <Ban size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleAction(user, 'reset-coins')}
+                          className="p-2 hover:bg-dark-600 rounded transition-colors text-purple-400"
+                          title="Reset Coins"
+                        >
+                          <RotateCcw size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
