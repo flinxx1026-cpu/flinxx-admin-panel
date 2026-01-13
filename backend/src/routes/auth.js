@@ -222,3 +222,4 @@ router.post('/check-ban', async (req, res) => {
   }
 })
 
+export default router
