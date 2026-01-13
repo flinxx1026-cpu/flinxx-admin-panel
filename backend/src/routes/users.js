@@ -25,9 +25,7 @@ router.get('/debug/test', async (req, res) => {
   }
 })
 
-// Protect all other routes with authentication
-router.use(verifyAdminToken)
-
+// GET users - public read access for now
 router.get('/', async (req, res) => {
   try {
     const { search } = req.query
@@ -66,6 +64,9 @@ router.get('/', async (req, res) => {
     })
   }
 })
+
+// Protect all write operations with authentication
+router.use(verifyAdminToken)
 
 router.post('/:userId/ban', async (req, res) => {
   try {
