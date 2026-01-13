@@ -1,13 +1,19 @@
 import express from 'express'
 import prisma from '../config/database.js'
+import { verifyAdminToken } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
+
+// Protect all routes with authentication
+router.use(verifyAdminToken)
 
 router.get('/', async (req, res) => {
   try {
     const { search } = req.query
+    console.log(`📨 Users endpoint called with search: "${search}"`)
 
     if (search) {
+      console.log(`🔍 Searching for users with query: "${search}"`)
       const users = await prisma.user.findMany({
         where: {
           OR: [
@@ -22,6 +28,7 @@ router.get('/', async (req, res) => {
     }
 
     // Fetch all users, sorted by most recent first
+    console.log('📥 Fetching all users from database...')
     const users = await prisma.user.findMany({
       orderBy: { created_at: 'desc' }
     })
@@ -29,8 +36,13 @@ router.get('/', async (req, res) => {
     console.log(`✅ Fetched all ${users.length} users from database`)
     res.json({ users })
   } catch (error) {
-    console.error('Error fetching users:', error)
-    res.status(500).json({ message: 'Error fetching users', error: error.message })
+    console.error('❌ Error fetching users:', error)
+    console.error('Error stack:', error.stack)
+    res.status(500).json({ 
+      message: 'Error fetching users', 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    })
   }
 })
 
