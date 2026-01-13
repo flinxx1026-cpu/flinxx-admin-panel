@@ -10,6 +10,8 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState('')
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionMessage, setActionMessage] = useState('')
 
   useEffect(() => {
     fetchUsers()
@@ -30,16 +32,45 @@ export default function UserManagement() {
     setSelectedUser(user)
     setModalType(type)
     setShowModal(true)
+    setActionMessage('')
   }
 
   const performAction = async () => {
     try {
-      // Currently no backend actions available for this user data structure
-      // Actions can be implemented as needed
-      setShowModal(false)
-      fetchUsers()
+      if (!selectedUser) return
+
+      setActionLoading(true)
+      setActionMessage('')
+
+      const userId = selectedUser.id
+      let response
+
+      if (modalType === 'warn') {
+        console.log(`📤 Sending warning to user: ${userId}`)
+        response = await api.post(`/admin/users/${userId}/warn`, {
+          warning_message: 'You have received a warning from an admin. Please review our community guidelines.'
+        })
+        setActionMessage('✅ Warning sent successfully')
+      } else if (modalType === 'ban') {
+        console.log(`📤 Banning user: ${userId}`)
+        response = await api.post(`/admin/users/${userId}/ban`, {
+          ban_reason: 'Banned by admin'
+        })
+        setActionMessage('✅ User has been banned')
+      }
+
+      console.log('Action response:', response)
+
+      // Refresh users list and close modal after delay
+      setTimeout(() => {
+        setShowModal(false)
+        fetchUsers()
+      }, 1000)
     } catch (error) {
       console.error('Action failed:', error)
+      setActionMessage(`❌ Error: ${error.response?.data?.message || error.message}`)
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -126,26 +157,51 @@ export default function UserManagement() {
       </div>
 
       {/* Action Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={`${modalType.toUpperCase()}`}>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={`${modalType === 'warn' ? 'Send Warning' : 'Ban User'}`}>
         <div className="space-y-4">
-          <p className="text-dark-300">Are you sure you want to {modalType} this user?</p>
-          <p className="text-sm text-dark-400">
-            User: <span className="text-dark-200 font-medium">{selectedUser?.username}</span>
-          </p>
-          <div className="flex gap-3 justify-end">
-            <button
-              onClick={() => setShowModal(false)}
-              className="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-dark-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={performAction}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-            >
-              Confirm
-            </button>
-          </div>
+          {actionMessage ? (
+            <>
+              <p className={`text-sm font-medium ${actionMessage.includes('✅') ? 'text-green-400' : 'text-red-400'}`}>
+                {actionMessage}
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-dark-200 rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-dark-300">
+                Are you sure you want to {modalType === 'warn' ? 'send a warning to' : 'ban'} this user?
+              </p>
+              <p className="text-sm text-dark-400">
+                User: <span className="text-dark-200 font-medium">{selectedUser?.display_name || selectedUser?.email}</span>
+              </p>
+              <p className="text-xs text-dark-500">
+                Email: {selectedUser?.email}
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowModal(false)}
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-dark-200 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={performAction}
+                  disabled={actionLoading}
+                  className={`px-4 py-2 ${modalType === 'warn' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-red-600 hover:bg-red-700'} text-white rounded-lg transition-colors disabled:opacity-50`}
+                >
+                  {actionLoading ? 'Processing...' : modalType === 'warn' ? 'Send Warning' : 'Ban User'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
     </div>
