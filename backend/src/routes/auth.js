@@ -174,4 +174,51 @@ router.get('/me', async (req, res) => {
   }
 })
 
-export default router
+// Check if admin is banned
+router.post('/check-ban', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false,
+        is_banned: false,
+        message: 'No token provided' 
+      })
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key')
+    
+    // Check if user exists and their ban status
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, email: true, banned: true }
+    })
+
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        is_banned: false,
+        message: 'User not found' 
+      })
+    }
+
+    return res.json({
+      success: true,
+      is_banned: user.banned || false,
+      user: {
+        id: user.id,
+        email: user.email
+      }
+    })
+  } catch (error) {
+    console.error('❌ Error checking ban status:', error)
+    res.status(401).json({ 
+      success: false,
+      is_banned: false,
+      message: 'Invalid or expired token' 
+    })
+  }
+})
+

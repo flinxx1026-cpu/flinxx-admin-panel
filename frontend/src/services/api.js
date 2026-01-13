@@ -59,7 +59,7 @@ export const checkBanStatus = async () => {
       return { is_banned: false }
     }
 
-    const response = await api.post('/check-ban')
+    const response = await api.post('/api/auth/check-ban')
     console.log('✅ Ban status check:', response.data)
     
     if (response.data.is_banned) {

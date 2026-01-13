@@ -20,43 +20,37 @@ dotenv.config()
 
 const app = express()
 const httpServer = createServer(app)
+
+// Define allowed origins
+const allowedOrigins = [
+  "https://flinxx-admin-panel.vercel.app",
+  "https://flinxx-backend-frontend.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  process.env.FRONTEND_URL,
+  process.env.ADMIN_PANEL_URL
+].filter(origin => origin) // Filter out undefined/null values
+
+const corsOptions = {
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true,
+  optionsSuccessStatus: 200
+}
+
 const io = new Server(httpServer, {
-  cors: {
-    origin: [
-      "https://flinxx-admin-panel.vercel.app",
-      "https://flinxx-backend-frontend.vercel.app",
-      "http://localhost:5173",
-      process.env.FRONTEND_URL,
-      process.env.ADMIN_PANEL_URL
-    ],
-    methods: ["GET", "POST"],
-    credentials: true,
-  }
+  cors: corsOptions
 })
 const PORT = process.env.PORT || 3001
 
 // Middleware
-app.use(
-  cors({
-    origin: [
-      "https://flinxx-admin-panel.vercel.app",
-      "https://flinxx-backend-frontend.vercel.app",
-      "http://localhost:5173",
-      process.env.FRONTEND_URL,
-      process.env.ADMIN_PANEL_URL
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 
-console.log("Allowed Origins:", [
-  "https://flinxx-admin-panel.vercel.app",
-  "https://flinxx-backend-frontend.vercel.app",
-  "http://localhost:5173",
-  process.env.FRONTEND_URL,
-  process.env.ADMIN_PANEL_URL,
-]);
+console.log("✅ CORS Enabled for Origins:", allowedOrigins);
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 app.use(express.json())
 
