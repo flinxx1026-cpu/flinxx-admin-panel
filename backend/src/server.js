@@ -32,27 +32,41 @@ const allowedOrigins = [
   process.env.ADMIN_PANEL_URL
 ].filter(origin => origin)
 
+console.log("🔧 Allowed Origins for CORS:", allowedOrigins)
+
+// CORS Configuration - MUST be FIRST middleware
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: function(origin, callback) {
+    console.log(`🔍 CORS check for origin: ${origin}`)
+    
+    // Allow requests with no origin (like mobile apps, Postman)
+    if (!origin || allowedOrigins.includes(origin)) {
+      console.log(`✅ CORS allowed for: ${origin}`)
+      callback(null, true)
+    } else {
+      console.log(`❌ CORS rejected for: ${origin}`)
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  maxAge: 3600
 }
+
+// Apply CORS FIRST, before anything else
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
+
+console.log("✅ CORS middleware applied")
+
+// Then apply other middleware
+app.use(express.json())
 
 const io = new Server(httpServer, {
   cors: corsOptions
 })
 const PORT = process.env.PORT || 3001
-
-// Middleware
-app.use(cors(corsOptions));
-
-console.log("✅ CORS Enabled for Origins:", allowedOrigins);
-
-// VERY IMPORTANT: Handle preflight requests with same corsOptions
-app.options('*', cors(corsOptions));
-
-app.use(express.json())
 
 // Connect Database
 connectDB()
@@ -112,53 +126,6 @@ app.use('/api/admin/settings', settingsRoutes)
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Admin Panel API is running' })
-})
-
-// Check if user is banned
-app.post('/api/check-ban', (req, res) => {
-  try {
-    console.log('📌 Check ban endpoint called')
-    const authHeader = req.headers.authorization
-    
-    if (!authHeader) {
-      console.log('❌ No authorization header')
-      return res.status(401).json({ 
-        success: false,
-        message: 'No token provided'
-      })
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    console.log(`🔐 Token received: ${token.substring(0, 20)}...`)
-
-    // Verify token
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key')
-      console.log(`✅ Token verified, userId: ${decoded.id}`)
-      
-      // For now, just verify the token is valid
-      return res.json({
-        success: true,
-        is_banned: false,
-        message: 'User is active',
-        userId: decoded.id
-      })
-    } catch (error) {
-      console.log(`❌ Token verification failed: ${error.message}`)
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token',
-        error: error.message
-      })
-    }
-  } catch (error) {
-    console.error('❌ Check ban error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Error checking ban status',
-      error: error.message
-    })
-  }
 })
 
 // Database health check
