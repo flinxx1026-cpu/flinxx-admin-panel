@@ -31,6 +31,10 @@ router.get('/', async (req, res) => {
     const { search } = req.query
     console.log(`📨 Users endpoint called with search: "${search || 'none'}"`)
 
+    // First, test basic database connectivity
+    const testCount = await prisma.user.count()
+    console.log(`✅ Database count test passed: ${testCount} users`)
+
     if (search && search.trim()) {
       console.log(`🔍 Searching for users with query: "${search}"`)
       const users = await prisma.user.findMany({
@@ -40,27 +44,43 @@ router.get('/', async (req, res) => {
             { display_name: { contains: search, mode: 'insensitive' } }
           ]
         },
-        orderBy: { created_at: 'desc' }
+        select: {
+          id: true,
+          email: true,
+          display_name: true,
+          created_at: true
+        }
       })
       console.log(`✅ Found ${users.length} user(s) matching search: "${search}"`)
       return res.json({ users })
     }
 
-    // Fetch all users, sorted by most recent first
+    // Fetch all users - use select to only get needed fields and avoid potential issues
     console.log('📥 Fetching all users from database...')
     const users = await prisma.user.findMany({
-      orderBy: { created_at: 'desc' }
+      select: {
+        id: true,
+        email: true,
+        display_name: true,
+        photo_url: true,
+        created_at: true,
+        age: true,
+        gender: true
+      }
     })
     
     console.log(`✅ Fetched all ${users.length} users from database`)
     res.json({ users })
   } catch (error) {
     console.error('❌ Error fetching users:', error)
+    console.error('Error message:', error.message)
+    console.error('Error code:', error.code)
     console.error('Error stack:', error.stack)
     res.status(500).json({ 
       message: 'Error fetching users', 
       error: error.message,
-      stack: error.stack
+      code: error.code,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     })
   }
 })
