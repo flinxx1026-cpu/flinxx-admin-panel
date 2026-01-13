@@ -92,32 +92,42 @@ const createUsersRouter = (io) => {
   router.use(verifyAdminToken)
 
   router.post('/:userId/ban', async (req, res) => {
+    let userId = null
     try {
-      const { userId } = req.params
+      userId = req.params.userId
       const { ban_reason } = req.body
       const adminId = req.admin?.id
       
       console.log(`🚫 Banning user: ${userId} by admin: ${adminId}`)
       console.log(`📋 Request body:`, req.body)
       console.log(`📋 Request params:`, req.params)
+      console.log(`📋 Admin info:`, { adminId, adminEmail: req.admin?.email })
       
-      // Validate userId format (UUID)
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      if (!uuidRegex.test(userId)) {
-        console.warn(`⚠️ Invalid UUID format: ${userId}`)
+      // Validate userId format (UUID) - make it more lenient
+      if (!userId || typeof userId !== 'string') {
+        console.warn(`⚠️ Invalid userId type: ${typeof userId}`)
         return res.status(400).json({ 
           success: false,
-          message: 'Invalid user ID format',
-          error: 'User ID must be a valid UUID'
+          message: 'Invalid user ID',
+          error: 'User ID must be a string'
         })
       }
 
       // Check if user exists first
       console.log(`🔍 Checking if user exists: ${userId}`)
-      const userExists = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, email: true, banned: true }
-      })
+      let userExists = null
+      
+      try {
+        userExists = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, email: true, banned: true }
+        })
+        console.log(`✅ Database query successful. User found:`, userExists ? 'YES' : 'NO')
+      } catch (dbError) {
+        console.error(`❌ Database findUnique error:`, dbError.message)
+        console.error(`📋 DB Error code:`, dbError.code)
+        throw dbError
+      }
       
       if (!userExists) {
         console.warn(`⚠️ User not found: ${userId}`)
@@ -131,14 +141,22 @@ const createUsersRouter = (io) => {
       console.log(`📌 User found: ${userExists.email}, currently banned: ${userExists.banned}`)
 
       // Ban the user using Prisma with UUID ID
-      console.log(`🔄 Updating user ban status...`)
-      const bannedUser = await prisma.user.update({
-        where: { id: userId },
-        data: { banned: true }
-      })
+      console.log(`🔄 Updating user ban status for ID: ${userId}`)
+      let bannedUser = null
+      
+      try {
+        bannedUser = await prisma.user.update({
+          where: { id: userId },
+          data: { banned: true }
+        })
+        console.log(`✅ Database update successful`)
+      } catch (updateError) {
+        console.error(`❌ Database update error:`, updateError.message)
+        console.error(`📋 Update Error code:`, updateError.code)
+        throw updateError
+      }
       
       console.log(`✅ User ${userId} has been banned successfully`)
-      console.log(`✅ Ban result:`, bannedUser)
       
       // Emit socket event to force logout the banned user - wrap in try-catch to prevent failures
       try {
@@ -154,9 +172,11 @@ const createUsersRouter = (io) => {
         }
       } catch (socketError) {
         console.error(`❌ Socket emission error:`, socketError.message)
+        console.error(`📋 Socket error stack:`, socketError.stack)
         // Don't fail the request, just log the socket error
       }
       
+      console.log(`✅ Sending success response for ban`)
       res.json({ 
         success: true,
         message: 'User has been banned successfully',
@@ -168,12 +188,12 @@ const createUsersRouter = (io) => {
         }
       })
     } catch (error) {
-      console.error('❌ Error banning user:', error.message)
+      console.error('❌ CATCH BLOCK - Error banning user:', error.message)
       console.error('📋 Full error object:', error)
+      console.error('📋 Error stack:', error.stack)
       console.error('📋 Error details:', {
         code: error.code,
         message: error.message,
-        stack: error.stack,
         meta: error.meta
       })
       
@@ -185,8 +205,11 @@ const createUsersRouter = (io) => {
         errorMessage = 'Database constraint violation'
       } else if (error.code === 'P2014') {
         errorMessage = 'Required relation violation'
+      } else if (error.code === 'P2017') {
+        errorMessage = 'Missing required relation'
       }
       
+      console.log(`📤 Sending error response: ${errorMessage}`)
       res.status(500).json({ 
         success: false,
         message: errorMessage,
