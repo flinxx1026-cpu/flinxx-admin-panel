@@ -18,10 +18,10 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     try {
       const response = await api.get(`/admin/users?search=${search}`)
-      setUsers(response.data.users)
+      setUsers(response.data.users || response.data)
+      setLoading(false)
     } catch (error) {
       console.error('Failed to fetch users:', error)
-    } finally {
       setLoading(false)
     }
   }
@@ -86,19 +86,19 @@ export default function UserManagement() {
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-medium text-dark-100">{user.display_name || 'N/A'}</p>
-                        <p className="text-xs text-dark-400">ID: {String(user.id).substring(0, 8)}</p>
+                        <p className="text-xs text-dark-400">ID: {String(user.id).substring(0, 12)}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-dark-300">{user.email}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        user.auth_provider ? 'bg-green-900/30 text-green-300' : 'bg-yellow-900/30 text-yellow-300'
+                        user.profileCompleted ? 'bg-green-900/30 text-green-300' : 'bg-yellow-900/30 text-yellow-300'
                       }`}>
-                        {user.auth_provider ? 'Verified' : 'Unverified'}
+                        {user.profileCompleted ? 'Complete' : 'Incomplete'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-dark-300">-</td>
-                    <td className="px-6 py-4 text-dark-300">-</td>
+                    <td className="px-6 py-4 text-sm text-dark-300">{new Date(user.created_at).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-dark-300">{user.age || '-'}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
