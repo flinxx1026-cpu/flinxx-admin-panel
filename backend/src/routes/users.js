@@ -88,6 +88,33 @@ const createUsersRouter = (io) => {
     }
   })
 
+  // Debug endpoint - test database update without auth
+  router.get('/debug/test-update/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params
+      console.log(`🧪 Testing update on user: ${userId}`)
+      
+      const result = await prisma.user.update({
+        where: { id: userId },
+        data: { banned: false }  // Just toggle banned status for testing
+      })
+      
+      res.json({
+        success: true,
+        message: 'Test update successful',
+        result: { id: result.id, email: result.email, banned: result.banned }
+      })
+    } catch (error) {
+      console.error('❌ Test update failed:', error)
+      res.status(500).json({
+        success: false,
+        message: 'Test update failed',
+        error: error.message,
+        code: error.code
+      })
+    }
+  })
+
   // Protect all write operations with authentication
   router.use(verifyAdminToken)
 
