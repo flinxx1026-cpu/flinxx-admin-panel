@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import Layout from './layouts/Layout'
 import Dashboard from './pages/Dashboard'
 import UserManagement from './pages/UserManagement'
@@ -12,8 +13,18 @@ import Settings from './pages/Settings'
 import AdminRoles from './pages/AdminRoles'
 import SecurityLogs from './pages/SecurityLogs'
 import Login from './pages/Login'
+import { checkBanStatus } from './services/api'
 
 function App() {
+  useEffect(() => {
+    // Check if user is banned on app load
+    const token = localStorage.getItem('adminToken')
+    if (token) {
+      console.log('🔍 Checking ban status on app load...')
+      checkBanStatus()
+    }
+  }, [])
+
   return (
     <BrowserRouter>
       <Routes>
