@@ -17,7 +17,7 @@ export default function PaymentsSubscriptions() {
 
   const fetchPaymentData = async () => {
     try {
-      const response = await api.get('/admin/payments')
+      const response = await api.get('/api/admin/payments')
       setStats(response.data.stats || {})
       setTransactions(response.data.transactions || [])
     } catch (error) {
