@@ -99,9 +99,9 @@ const createUsersRouter = (io) => {
       
       console.log(`🚫 Banning user: ${userId} by admin: ${adminId}`)
       
-      // Ban the user using Prisma with numeric ID
+      // Ban the user using Prisma with UUID ID
       const bannedUser = await prisma.user.update({
-        where: { id: parseInt(userId) },
+        where: { id: userId },
         data: { banned: true }
       })
       
@@ -144,9 +144,9 @@ const createUsersRouter = (io) => {
       
       console.log(`✅ Unbanning user: ${userId} by admin: ${adminId}`)
       
-      // Unban the user using Prisma with numeric ID
+      // Unban the user using Prisma with UUID ID
       const unbannedUser = await prisma.user.update({
-        where: { id: parseInt(userId) },
+        where: { id: userId },
         data: { banned: false }
       })
       

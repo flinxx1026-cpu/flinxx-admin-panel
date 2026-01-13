@@ -47,9 +47,9 @@ export const verifyUserToken = async (req, res, next) => {
     
     console.log(`🔐 Verifying user token for: ${decoded.email}`)
     
-    // Check if user is banned (for regular users)
-    if (decoded.id && typeof decoded.id === 'number') {
-      // This is a user token with numeric ID, check ban status
+    // Check if user is banned (for regular users with UUID id)
+    if (decoded.id && typeof decoded.id === 'string' && decoded.id.length === 36) {
+      // This is a user token with UUID format, check ban status
       const user = await prisma.user.findUnique({
         where: { id: decoded.id }
       })
