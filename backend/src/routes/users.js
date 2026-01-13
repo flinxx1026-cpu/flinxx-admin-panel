@@ -27,12 +27,12 @@ router.get('/debug/sql-test', async (req, res) => {
 router.get('/debug/test', async (req, res) => {
   try {
     console.log('🧪 Debug test endpoint called')
-    const count = await prisma.user.count()
-    const sample = await prisma.user.findFirst()
+    const result = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "users"`
+    const sample = await prisma.$queryRaw`SELECT id, email, display_name FROM "users" LIMIT 1`
     res.json({ 
       success: true,
-      totalUsers: count,
-      sampleUser: sample
+      totalUsers: result[0]?.count || 0,
+      sampleUser: sample[0] || null
     })
   } catch (error) {
     console.error('🧪 Debug test failed:', error)
