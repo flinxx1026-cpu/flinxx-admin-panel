@@ -99,8 +99,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' })
     }
 
-    if (user.banned) {
-      return res.status(403).json({ message: 'Account has been banned' })
+    if (user.banned === true) {
+      return res.status(403).json({
+        code: "USER_BANNED",
+        message: 'Your account is banned'
+      })
     }
 
     // Check password
