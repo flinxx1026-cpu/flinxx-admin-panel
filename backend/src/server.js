@@ -24,8 +24,10 @@ const io = new Server(httpServer, {
   cors: {
     origin: [
       "https://flinxx-admin-panel.vercel.app",
+      "https://flinxx-backend-frontend.vercel.app",
       "http://localhost:5173",
-      process.env.FRONTEND_URL
+      process.env.FRONTEND_URL,
+      process.env.ADMIN_PANEL_URL
     ],
     methods: ["GET", "POST"],
     credentials: true,
@@ -38,8 +40,10 @@ app.use(
   cors({
     origin: [
       "https://flinxx-admin-panel.vercel.app",
+      "https://flinxx-backend-frontend.vercel.app",
       "http://localhost:5173",
-      process.env.FRONTEND_URL
+      process.env.FRONTEND_URL,
+      process.env.ADMIN_PANEL_URL
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
@@ -48,8 +52,10 @@ app.use(
 
 console.log("Allowed Origins:", [
   "https://flinxx-admin-panel.vercel.app",
+  "https://flinxx-backend-frontend.vercel.app",
   "http://localhost:5173",
   process.env.FRONTEND_URL,
+  process.env.ADMIN_PANEL_URL,
 ]);
 
 app.use(express.json())
