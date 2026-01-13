@@ -33,9 +33,20 @@ const allowedOrigins = [
 ].filter(origin => origin) // Filter out undefined/null values
 
 const corsOptions = {
-  origin: allowedOrigins,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (Postman, mobile apps, etc)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`🚫 CORS blocked origin: ${origin}`)
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200
 }
 
@@ -49,7 +60,7 @@ app.use(cors(corsOptions));
 
 console.log("✅ CORS Enabled for Origins:", allowedOrigins);
 
-// Handle preflight requests
+// ⚠️ VERY IMPORTANT: Handle preflight requests
 app.options('*', cors(corsOptions));
 
 app.use(express.json())
