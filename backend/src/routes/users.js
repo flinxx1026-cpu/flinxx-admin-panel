@@ -29,9 +29,9 @@ router.get('/debug/test', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const { search } = req.query
-    console.log(`📨 Users endpoint called with search: "${search}"`)
+    console.log(`📨 Users endpoint called with search: "${search || 'none'}"`)
 
-    if (search) {
+    if (search && search.trim()) {
       console.log(`🔍 Searching for users with query: "${search}"`)
       const users = await prisma.user.findMany({
         where: {
@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ 
       message: 'Error fetching users', 
       error: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: error.stack
     })
   }
 })
