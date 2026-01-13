@@ -49,8 +49,8 @@ app.use(cors(corsOptions));
 
 console.log("✅ CORS Enabled for Origins:", allowedOrigins);
 
-// VERY IMPORTANT: Handle preflight requests
-app.options('*', cors());
+// VERY IMPORTANT: Handle preflight requests with same corsOptions
+app.options('*', cors(corsOptions));
 
 app.use(express.json())
 
