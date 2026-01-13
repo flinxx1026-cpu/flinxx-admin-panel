@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,53 +17,64 @@ model Admin {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  email           String   @unique
-  display_name    String?
-  photo_url       String?
-  auth_provider   String?
-  provider_id     String?
-  google_id       String?
-  birthday        DateTime?
-  gender          String?
-  age             Int?
-  profileCompleted Boolean @default(false)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-  termsAccepted   Boolean @default(false)
-  public_id       String?
+  id                                                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                              String            @unique @db.VarChar(255)
+  display_name                                       String?           @db.VarChar(255)
+  photo_url                                          String?
+  auth_provider                                      String?           @db.VarChar(50)
+  provider_id                                        String?           @db.VarChar(255)
+  google_id                                          String?           @unique
+  birthday                                           DateTime?         @db.Timestamp(6)
+  gender                                             String?
+  age                                                Int?
+  profileCompleted                                   Boolean?          @default(false)
+  created_at                                         DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at                                         DateTime?         @default(now()) @updatedAt @db.Timestamp(6)
+  termsAccepted                                      Boolean?          @default(false)
+  public_id                                          String?           @unique @db.VarChar(8)
+  friend_requests_friend_requests_receiver_idTousers friend_requests[] @relation("friend_requests_receiver_idTousers")
+  friend_requests_friend_requests_sender_idTousers   friend_requests[] @relation("friend_requests_sender_idTousers")
+  premium                                            premium[]
+  reports_reports_reported_user_idTousers            reports[]         @relation("reports_reported_user_idTousers")
+  reports_reports_reporter_idTousers                 reports[]         @relation("reports_reporter_idTousers")
+  sessions_sessions_user1_idTousers                  sessions[]        @relation("sessions_user1_idTousers")
+  sessions_sessions_user2_idTousers                  sessions[]        @relation("sessions_user2_idTousers")
 
+  @@index([email], map: "idx_users_email")
+  @@index([google_id], map: "idx_users_google_id")
+  @@index([profileCompleted], map: "idx_users_profile_completed")
+  @@index([auth_provider, provider_id], map: "idx_users_provider")
   @@map("users")
 }
 
 model Report {
-  id        Int      @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   reportedUserId Int
-  reason    String
-  evidence  String?
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  reason         String
+  evidence       String?
+  status         String   @default("pending")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Session {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   user1Id   Int
   user2Id   Int
   duration  Int
-  quality   String   @default("high")
-  createdAt DateTime @default(now())
+  quality   String    @default("high")
+  createdAt DateTime  @default(now())
   endedAt   DateTime?
 }
 
 model Payment {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  amount    Float
-  status    String   @default("pending")
-  transactionId String @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  amount        Float
+  status        String   @default("pending")
+  transactionId String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Setting {
@@ -79,3 +84,94 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
+model friend_requests {
+  id                                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sender_id                                String    @db.Uuid
+  receiver_id                              String    @db.Uuid
+  status                                   String?   @default("pending") @db.VarChar(20)
+  created_at                               DateTime? @default(now()) @db.Timestamp(6)
+  users_friend_requests_receiver_idTousers User      @relation("friend_requests_receiver_idTousers", fields: [receiver_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_friend_requests_sender_idTousers   User      @relation("friend_requests_sender_idTousers", fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([sender_id, receiver_id])
+  @@index([receiver_id], map: "idx_friend_requests_receiver")
+  @@index([sender_id], map: "idx_friend_requests_sender")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model friends {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sender_id   String    @db.Uuid
+  receiver_id String    @db.Uuid
+  status      String?   @default("pending")
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model matches {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String    @db.Uuid
+  matched_user_id      String    @db.Uuid
+  matched_user_name    String?
+  matched_user_country String?
+  duration_seconds     Int?
+  is_liked             Boolean?  @default(false)
+  created_at           DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([created_at(sort: Desc)], map: "idx_matches_created_at")
+  @@index([user_id], map: "idx_matches_user_id")
+}
+
+model messages {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sender_id   String    @db.Uuid
+  receiver_id String    @db.Uuid
+  message     String
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  is_read     Boolean?  @default(false)
+}
+
+model premium {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  status     String?   @default("inactive") @db.VarChar(50)
+  start_date DateTime? @db.Timestamp(6)
+  end_date   DateTime? @db.Timestamp(6)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  users      User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_premium_user_id")
+}
+
+model reports {
+  id                                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporter_id                           String    @db.Uuid
+  reported_user_id                      String    @db.Uuid
+  reason                                String?   @db.VarChar(255)
+  description                           String?
+  status                                String?   @default("pending") @db.VarChar(50)
+  created_at                            DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                            DateTime? @default(now()) @db.Timestamp(6)
+  users_reports_reported_user_idTousers User      @relation("reports_reported_user_idTousers", fields: [reported_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  users_reports_reporter_idTousers      User      @relation("reports_reporter_idTousers", fields: [reporter_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_reports_created_at")
+  @@index([status], map: "idx_reports_status")
+}
+
+model sessions {
+  id                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user1_id                       String    @db.Uuid
+  user2_id                       String    @db.Uuid
+  started_at                     DateTime? @default(now()) @db.Timestamp(6)
+  ended_at                       DateTime? @db.Timestamp(6)
+  duration_seconds               Int?
+  quality                        String?   @default("good") @db.VarChar(50)
+  users_sessions_user1_idTousers User      @relation("sessions_user1_idTousers", fields: [user1_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  users_sessions_user2_idTousers User      @relation("sessions_user2_idTousers", fields: [user2_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([started_at], map: "idx_sessions_started_at")
+  @@index([user1_id], map: "idx_sessions_user1")
+  @@index([user2_id], map: "idx_sessions_user2")
+}
