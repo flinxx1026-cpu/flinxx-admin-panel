@@ -9,6 +9,7 @@ import dashboardRoutes from './routes/dashboard.js'
 import usersRoutes from './routes/users.js'
 import reportsRoutes from './routes/reports.js'
 import settingsRoutes from './routes/settings.js'
+import { verifyUserToken } from './middleware/userAuthMiddleware.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 dotenv.config()
@@ -51,6 +52,63 @@ app.use('/api/admin/settings', settingsRoutes)
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Admin Panel API is running' })
+})
+
+// Check if user is banned
+app.post('/api/check-ban', verifyUserToken, async (req, res) => {
+  try {
+    const userId = req.user?.id
+    
+    if (!userId) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'No user ID found'
+      })
+    }
+
+    console.log(`🔍 Checking ban status for user: ${userId}`)
+
+    const userStatus = await prisma.$queryRaw`
+      SELECT id, is_banned, ban_reason 
+      FROM "users" 
+      WHERE id = ${userId}::uuid
+      LIMIT 1
+    `
+
+    if (userStatus && userStatus.length > 0) {
+      const user = userStatus[0]
+      
+      if (user.is_banned) {
+        console.log(`⚠️ User ${userId} is banned`)
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been banned',
+          reason: user.ban_reason || 'No reason provided',
+          error_code: 'USER_BANNED',
+          is_banned: true
+        })
+      }
+
+      console.log(`✅ User ${userId} is not banned`)
+      return res.json({
+        success: true,
+        is_banned: false,
+        message: 'User account is active'
+      })
+    }
+
+    res.status(404).json({
+      success: false,
+      message: 'User not found'
+    })
+  } catch (error) {
+    console.error('❌ Error checking ban status:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error checking ban status',
+      error: error.message
+    })
+  }
 })
 
 // Database health check
