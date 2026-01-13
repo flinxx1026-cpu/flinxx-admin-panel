@@ -81,8 +81,3 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
-
-  @@index([started_at], map: "idx_sessions_started_at")
-  @@index([user1_id], map: "idx_sessions_user1")
-  @@index([user2_id], map: "idx_sessions_user2")
-}

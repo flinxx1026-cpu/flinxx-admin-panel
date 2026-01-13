@@ -98,41 +98,100 @@ const createUsersRouter = (io) => {
       const adminId = req.admin?.id
       
       console.log(`🚫 Banning user: ${userId} by admin: ${adminId}`)
+      console.log(`📋 Request body:`, req.body)
+      console.log(`📋 Request params:`, req.params)
       
+      // Validate userId format (UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(userId)) {
+        console.warn(`⚠️ Invalid UUID format: ${userId}`)
+        return res.status(400).json({ 
+          success: false,
+          message: 'Invalid user ID format',
+          error: 'User ID must be a valid UUID'
+        })
+      }
+
+      // Check if user exists first
+      console.log(`🔍 Checking if user exists: ${userId}`)
+      const userExists = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, banned: true }
+      })
+      
+      if (!userExists) {
+        console.warn(`⚠️ User not found: ${userId}`)
+        return res.status(404).json({ 
+          success: false,
+          message: 'User not found',
+          error: `User with ID ${userId} does not exist`
+        })
+      }
+
+      console.log(`📌 User found: ${userExists.email}, currently banned: ${userExists.banned}`)
+
       // Ban the user using Prisma with UUID ID
+      console.log(`🔄 Updating user ban status...`)
       const bannedUser = await prisma.user.update({
         where: { id: userId },
         data: { banned: true }
       })
       
-      console.log(`✅ User ${userId} has been banned`)
+      console.log(`✅ User ${userId} has been banned successfully`)
+      console.log(`✅ Ban result:`, bannedUser)
       
-      // Emit socket event to force logout the banned user
-      if (io) {
-        io.to(`user:${userId}`).emit('force_logout', {
-          reason: 'Your account has been banned',
-          code: 'USER_BANNED'
-        })
-        console.log(`⚡ Force logout sent to user: ${userId}`)
+      // Emit socket event to force logout the banned user - wrap in try-catch to prevent failures
+      try {
+        if (io) {
+          console.log(`📡 Emitting force logout to user:${userId}`)
+          io.to(`user:${userId}`).emit('force_logout', {
+            reason: 'Your account has been banned',
+            code: 'USER_BANNED'
+          })
+          console.log(`⚡ Force logout sent to user: ${userId}`)
+        } else {
+          console.warn(`⚠️ Socket.io instance not available`)
+        }
+      } catch (socketError) {
+        console.error(`❌ Socket emission error:`, socketError.message)
+        // Don't fail the request, just log the socket error
       }
       
       res.json({ 
         success: true,
         message: 'User has been banned successfully',
         userId,
-        user: bannedUser
+        user: {
+          id: bannedUser.id,
+          email: bannedUser.email,
+          banned: bannedUser.banned
+        }
       })
     } catch (error) {
       console.error('❌ Error banning user:', error.message)
+      console.error('📋 Full error object:', error)
       console.error('📋 Error details:', {
         code: error.code,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
+        meta: error.meta
       })
+      
+      // More specific error messages
+      let errorMessage = 'Error banning user'
+      if (error.code === 'P2025') {
+        errorMessage = 'User not found in database'
+      } else if (error.code === 'P2003') {
+        errorMessage = 'Database constraint violation'
+      } else if (error.code === 'P2014') {
+        errorMessage = 'Required relation violation'
+      }
+      
       res.status(500).json({ 
         success: false,
-        message: 'Error banning user',
-        error: error.message 
+        message: errorMessage,
+        error: error.message,
+        code: error.code
       })
     }
   })
@@ -144,30 +203,73 @@ const createUsersRouter = (io) => {
       
       console.log(`✅ Unbanning user: ${userId} by admin: ${adminId}`)
       
+      // Validate userId format (UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(userId)) {
+        console.warn(`⚠️ Invalid UUID format: ${userId}`)
+        return res.status(400).json({ 
+          success: false,
+          message: 'Invalid user ID format',
+          error: 'User ID must be a valid UUID'
+        })
+      }
+
+      // Check if user exists first
+      const userExists = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, banned: true }
+      })
+      
+      if (!userExists) {
+        console.warn(`⚠️ User not found: ${userId}`)
+        return res.status(404).json({ 
+          success: false,
+          message: 'User not found',
+          error: `User with ID ${userId} does not exist`
+        })
+      }
+
+      console.log(`📌 User found: ${userExists.email}, currently banned: ${userExists.banned}`)
+      
       // Unban the user using Prisma with UUID ID
       const unbannedUser = await prisma.user.update({
         where: { id: userId },
         data: { banned: false }
       })
       
-      console.log(`✅ User ${userId} has been unbanned`)
+      console.log(`✅ User ${userId} has been unbanned successfully`)
       res.json({ 
         success: true,
         message: 'User has been unbanned successfully',
         userId,
-        user: unbannedUser
+        user: {
+          id: unbannedUser.id,
+          email: unbannedUser.email,
+          banned: unbannedUser.banned
+        }
       })
     } catch (error) {
       console.error('❌ Error unbanning user:', error.message)
       console.error('📋 Error details:', {
         code: error.code,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
+        meta: error.meta
       })
+      
+      // More specific error messages
+      let errorMessage = 'Error unbanning user'
+      if (error.code === 'P2025') {
+        errorMessage = 'User not found in database'
+      } else if (error.code === 'P2003') {
+        errorMessage = 'Database constraint violation'
+      }
+      
       res.status(500).json({ 
         success: false,
-        message: 'Error unbanning user',
-        error: error.message 
+        message: errorMessage,
+        error: error.message,
+        code: error.code
       })
     }
   })
