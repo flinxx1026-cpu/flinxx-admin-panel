@@ -30,27 +30,31 @@ const allowedOrigins = [
   "http://localhost:3001",
   process.env.FRONTEND_URL,
   process.env.ADMIN_PANEL_URL
-].filter(origin => origin)
+].filter(origin => origin !== undefined && origin !== null && origin !== '')
 
 console.log("🔧 Allowed Origins for CORS:", allowedOrigins)
+console.log("📌 FRONTEND_URL:", process.env.FRONTEND_URL)
+console.log("📌 ADMIN_PANEL_URL:", process.env.ADMIN_PANEL_URL)
 
 // CORS Configuration - MUST be FIRST middleware
 const corsOptions = {
   origin: function(origin, callback) {
     console.log(`🔍 CORS check for origin: ${origin}`)
     
-    // Allow requests with no origin (like mobile apps, Postman)
+    // Allow requests with no origin (like mobile apps, Postman) or if in allowedOrigins
     if (!origin || allowedOrigins.includes(origin)) {
       console.log(`✅ CORS allowed for: ${origin}`)
       callback(null, true)
     } else {
       console.log(`❌ CORS rejected for: ${origin}`)
+      console.log(`❌ Allowed origins are: ${allowedOrigins.join(', ')}`)
       callback(new Error('Not allowed by CORS'))
     }
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  optionsSuccessStatus: 200,
   maxAge: 3600
 }
 
