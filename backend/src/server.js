@@ -21,30 +21,36 @@ dotenv.config()
 const app = express()
 const httpServer = createServer(app)
 
+console.log("=" .repeat(50))
+console.log("🚀 SERVER STARTING")
+console.log("=" .repeat(50))
+
 // 🔥 CORS MUST BE FIRST - BEFORE EVERYTHING ELSE
+const corsOrigins = [
+  "https://flinxx-admin-panel.vercel.app",
+  "https://flinxx-backend-frontend.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  process.env.FRONTEND_URL,
+  process.env.ADMIN_PANEL_URL
+].filter(o => o && o !== 'undefined')
+
+console.log("✅ CORS Origins:", corsOrigins)
+
 const corsOptions = {
-  origin: [
-    "https://flinxx-admin-panel.vercel.app",
-    "https://flinxx-backend-frontend.vercel.app",
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://localhost:3001",
-    process.env.FRONTEND_URL,
-    process.env.ADMIN_PANEL_URL
-  ].filter(Boolean),
+  origin: corsOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   maxAge: 86400
 }
 
-console.log("🔧 CORS Origins:", corsOptions.origin)
-
 // 🔥 APPLY CORS FIRST - ABSOLUTELY FIRST
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
 
-console.log("✅ CORS applied")
+console.log("✅ CORS middleware applied")
 
 // Then all other middleware
 app.use(express.json())

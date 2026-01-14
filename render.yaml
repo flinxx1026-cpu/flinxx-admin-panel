@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: flinxx-backend
+    runtime: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_PANEL_URL
+        value: https://flinxx-admin-panel.vercel.app
+      - key: FRONTEND_URL
+        value: https://flinxx-backend-frontend.vercel.app
