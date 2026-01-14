@@ -114,6 +114,16 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'Admin Panel API is running' })
 })
 
+// DEBUG: Show CORS configuration
+app.get('/api/cors-debug', (req, res) => {
+  res.json({
+    corsOrigins: corsOptions.origin,
+    currentOrigin: req.get('origin'),
+    allowed: corsOptions.origin.includes(req.get('origin')),
+    timestamp: new Date().toISOString()
+  })
+})
+
 // Database health check
 app.get('/api/db-health', async (req, res) => {
   try {
