@@ -96,13 +96,13 @@ const createUsersRouter = (io) => {
       
       const result = await prisma.user.update({
         where: { id: userId },
-        data: { banned: false }  // Just toggle banned status for testing
+        data: { is_banned: false }  // Just toggle is_banned status for testing
       })
       
       res.json({
         success: true,
         message: 'Test update successful',
-        result: { id: result.id, email: result.email, banned: result.banned }
+        result: { id: result.id, email: result.email, is_banned: result.is_banned }
       })
     } catch (error) {
       console.error('❌ Test update failed:', error)
@@ -272,7 +272,7 @@ const createUsersRouter = (io) => {
       // Check if user exists first
       const userExists = await prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, banned: true }
+        select: { id: true, email: true, is_banned: true }
       })
       
       if (!userExists) {
@@ -284,12 +284,12 @@ const createUsersRouter = (io) => {
         })
       }
 
-      console.log(`📌 User found: ${userExists.email}, currently banned: ${userExists.banned}`)
+      console.log(`📌 User found: ${userExists.email}, currently banned: ${userExists.is_banned}`)
       
       // Unban the user using Prisma with UUID ID
       const unbannedUser = await prisma.user.update({
         where: { id: userId },
-        data: { banned: false }
+        data: { is_banned: false }
       })
       
       console.log(`✅ User ${userId} has been unbanned successfully`)
@@ -300,7 +300,7 @@ const createUsersRouter = (io) => {
         user: {
           id: unbannedUser.id,
           email: unbannedUser.email,
-          banned: unbannedUser.banned
+          is_banned: unbannedUser.is_banned
         }
       })
     } catch (error) {
