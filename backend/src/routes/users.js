@@ -250,23 +250,6 @@ const createUsersRouter = (io) => {
       })
     }
   })
-      } else if (error.code === 'P2003') {
-        errorMessage = 'Database constraint violation'
-      } else if (error.code === 'P2014') {
-        errorMessage = 'Required relation violation'
-      } else if (error.code === 'P2017') {
-        errorMessage = 'Missing required relation'
-      }
-      
-      console.log(`📤 Sending error response: ${errorMessage}`)
-      res.status(500).json({ 
-        success: false,
-        message: errorMessage,
-        error: error.message,
-        code: error.code
-      })
-    }
-  })
 
   router.post('/:userId/unban', async (req, res) => {
     try {
