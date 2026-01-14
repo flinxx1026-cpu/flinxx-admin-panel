@@ -6,6 +6,7 @@
     "dev": "nodemon --exec node src/server.js",
     "build": "npx prisma generate && npx prisma migrate deploy",
     "start": "node src/server.js",
+    "test-cors": "node test-cors.js",
     "verify-db": "node scripts/verifyDatabase.js",
     "cleanup-production": "node scripts/cleanupProduction.js",
     "seed-admin": "node scripts/seedAdmin.js"
