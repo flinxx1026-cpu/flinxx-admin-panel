@@ -54,15 +54,27 @@ const corsOptions = {
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  exposedHeaders: ["Content-Type"],
   optionsSuccessStatus: 200,
-  maxAge: 3600
+  maxAge: 86400
 }
 
 // Apply CORS FIRST, before anything else
 app.use(cors(corsOptions))
+// Handle preflight requests explicitly
 app.options('*', cors(corsOptions))
 
 console.log("✅ CORS middleware applied")
+
+// Additional CORS headers middleware as fallback
+app.use((req, res, next) => {
+  const origin = req.get('origin')
+  if (origin && allowedOrigins.includes(origin)) {
+    res.set('Access-Control-Allow-Origin', origin)
+    res.set('Access-Control-Allow-Credentials', 'true')
+  }
+  next()
+})
 
 // Then apply other middleware
 app.use(express.json())
