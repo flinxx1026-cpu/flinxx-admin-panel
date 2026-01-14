@@ -163,7 +163,7 @@ const createUsersRouter = (io) => {
       try {
         userExists = await prisma.user.findUnique({
           where: { id: userId },
-          select: { id: true, email: true, banned: true }
+          select: { id: true, email: true, is_banned: true }
         })
         console.log(`✅ Database query successful. User found:`, userExists ? 'YES - ' + userExists.email : 'NO')
       } catch (dbError) {
@@ -182,7 +182,7 @@ const createUsersRouter = (io) => {
         })
       }
 
-      console.log(`📌 User details: email=${userExists.email}, currentBanned=${userExists.banned}`)
+      console.log(`📌 User details: email=${userExists.email}, currentBanned=${userExists.is_banned}`)
 
       // Ban the user using Prisma with UUID ID
       console.log(`🔄 Updating user banned status to true for ID: ${userId}`)
@@ -191,7 +191,7 @@ const createUsersRouter = (io) => {
       try {
         bannedUser = await prisma.user.update({
           where: { id: userId },
-          data: { banned: true }
+          data: { is_banned: true }
         })
         console.log(`✅ Database update successful. User banned: ${bannedUser.email}`)
       } catch (updateError) {
@@ -229,7 +229,7 @@ const createUsersRouter = (io) => {
         user: {
           id: bannedUser.id,
           email: bannedUser.email,
-          banned: bannedUser.banned
+          is_banned: bannedUser.is_banned
         }
       })
     } catch (error) {
