@@ -21,62 +21,32 @@ dotenv.config()
 const app = express()
 const httpServer = createServer(app)
 
-// Define allowed origins
-const allowedOrigins = [
-  "https://flinxx-admin-panel.vercel.app",
-  "https://flinxx-backend-frontend.vercel.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://localhost:3001",
-  process.env.FRONTEND_URL,
-  process.env.ADMIN_PANEL_URL
-].filter(origin => origin !== undefined && origin !== null && origin !== '')
-
-console.log("🔧 Allowed Origins for CORS:", allowedOrigins)
-console.log("📌 FRONTEND_URL:", process.env.FRONTEND_URL)
-console.log("📌 ADMIN_PANEL_URL:", process.env.ADMIN_PANEL_URL)
-
-// CORS Configuration - MUST be FIRST middleware
+// 🔥 CORS MUST BE FIRST - BEFORE EVERYTHING ELSE
 const corsOptions = {
-  origin: function(origin, callback) {
-    console.log(`🔍 CORS check for origin: ${origin}`)
-    
-    // Allow requests with no origin (like mobile apps, Postman) or if in allowedOrigins
-    if (!origin || allowedOrigins.includes(origin)) {
-      console.log(`✅ CORS allowed for: ${origin}`)
-      callback(null, true)
-    } else {
-      console.log(`❌ CORS rejected for: ${origin}`)
-      console.log(`❌ Allowed origins are: ${allowedOrigins.join(', ')}`)
-      callback(new Error('Not allowed by CORS'))
-    }
-  },
+  origin: [
+    "https://flinxx-admin-panel.vercel.app",
+    "https://flinxx-backend-frontend.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    process.env.FRONTEND_URL,
+    process.env.ADMIN_PANEL_URL
+  ].filter(Boolean),
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  exposedHeaders: ["Content-Type"],
-  optionsSuccessStatus: 200,
   maxAge: 86400
 }
 
-// Apply CORS FIRST, before anything else
+console.log("🔧 CORS Origins:", corsOptions.origin)
+
+// 🔥 APPLY CORS FIRST - ABSOLUTELY FIRST
 app.use(cors(corsOptions))
-// Handle preflight requests explicitly
 app.options('*', cors(corsOptions))
 
-console.log("✅ CORS middleware applied")
+console.log("✅ CORS applied")
 
-// Additional CORS headers middleware as fallback
-app.use((req, res, next) => {
-  const origin = req.get('origin')
-  if (origin && allowedOrigins.includes(origin)) {
-    res.set('Access-Control-Allow-Origin', origin)
-    res.set('Access-Control-Allow-Credentials', 'true')
-  }
-  next()
-})
-
-// Then apply other middleware
+// Then all other middleware
 app.use(express.json())
 
 const io = new Server(httpServer, {
