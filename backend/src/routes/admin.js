@@ -168,7 +168,7 @@ router.get('/dashboard', async (req, res) => {
   try {
     const result = await prisma.$queryRaw`
       SELECT COUNT(*)::int AS count
-      FROM "User"
+      FROM users
       WHERE created_at >= NOW() - INTERVAL '24 hours'
     `
 

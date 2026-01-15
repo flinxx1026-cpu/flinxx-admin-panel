@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
     // Get real new signups count from database
     const signupResult = await prisma.$queryRaw`
       SELECT COUNT(*)::int AS count
-      FROM "User"
+      FROM users
       WHERE created_at >= NOW() - INTERVAL '24 hours'
     `
     const newSignups = Number(signupResult[0].count)
