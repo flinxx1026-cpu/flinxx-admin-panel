@@ -173,13 +173,17 @@ router.get('/dashboard', async (req, res) => {
     `
 
     console.log('📊 Dashboard query result:', JSON.stringify(result))
-    const newSignups = Number(result[0].count)
+    const newSignups = result[0]?.count ?? 0
     console.log('📊 New signups count:', newSignups)
     
-    res.json({ newSignups })
+    res.json({ 
+      stats: { 
+        newSignups: Number(newSignups)
+      }
+    })
   } catch (error) {
-    console.error('❌ Dashboard error:', error)
-    res.status(500).json({ message: 'Dashboard error' })
+    console.error('❌ Dashboard error:', error.message)
+    res.status(500).json({ message: 'Dashboard error', error: error.message })
   }
 })
 
