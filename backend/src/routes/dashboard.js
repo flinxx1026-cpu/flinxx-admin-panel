@@ -1,4 +1,5 @@
 import express from 'express'
+import prisma from '../config/database.js'
 
 const router = express.Router()
 
@@ -6,12 +7,21 @@ router.get('/', async (req, res) => {
   try {
     console.log('📊 Dashboard API called')
     
+    // Get real new signups count from database
+    const signupResult = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count
+      FROM "User"
+      WHERE created_at >= NOW() - INTERVAL '24 hours'
+    `
+    const newSignups = Number(signupResult[0].count)
+    console.log('📊 New signups from DB (last 24h):', newSignups)
+    
     // Return completely hardcoded mock data
     const responseData = {
       stats: {
         activeUsers: 42,
         ongoingSessions: 12,
-        newSignups: 8,
+        newSignups: newSignups,
         revenue: 1200,
         reportsLastDay: 5,
         totalUsers: 156
