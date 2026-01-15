@@ -168,7 +168,7 @@ router.get('/dashboard', async (req, res) => {
   try {
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
-    const newSignups = await prisma.users.count({
+    const newSignups = await prisma.user.count({
       where: {
         created_at: {
           gte: last24Hours
