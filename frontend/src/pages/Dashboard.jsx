@@ -30,6 +30,13 @@ export default function Dashboard() {
       setRevenueData(response.data.revenueData)
       setUserDistribution(response.data.userDistribution)
       setRecentActivity(response.data.recentActivity)
+      
+      // Fetch real new signups from dashboard endpoint
+      const dashboardRes = await api.get('/admin/dashboard')
+      setStats(prev => ({
+        ...prev,
+        newSignups: dashboardRes.data.newSignups
+      }))
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
     } finally {
