@@ -5,6 +5,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import api from '../services/api'
 
 export default function Dashboard() {
+  const [newSignups, setNewSignups] = useState(0)
   const [stats, setStats] = useState({
     activeUsers: 0,
     ongoingSessions: 0,
@@ -19,23 +20,25 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchDashboardData()
+    // Fetch real new signups from backend
+    api
+      .get('/admin/dashboard', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      })
+      .then(res => {
+        console.log('Dashboard API response:', res.data)
+        setNewSignups(res.data.newSignups ?? 0)
+      })
+      .catch(err => {
+        console.error('Dashboard API error', err)
+        setNewSignups(0)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }, [])
-
-  const fetchDashboardData = async () => {
-    try {
-      // Fetch real new signups from backend
-      const signupsRes = await api.get('/admin/dashboard')
-      setStats(prev => ({
-        ...prev,
-        newSignups: signupsRes.data.newSignups
-      }))
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const COLORS = ['#9333ea', '#7c3aed', '#6d28d9', '#5b21b6']
 
@@ -82,7 +85,7 @@ export default function Dashboard() {
         <StatCard
           icon={UserPlus}
           title="New Signups"
-          value={stats.newSignups}
+          value={newSignups}
           change="+23%"
           trend="up"
           color="bg-purple-900/30"
