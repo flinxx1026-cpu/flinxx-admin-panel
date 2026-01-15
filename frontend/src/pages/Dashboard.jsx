@@ -28,11 +28,12 @@ export default function Dashboard() {
         }
       })
       .then(res => {
-        console.log('Dashboard API response:', res.data)
+        console.log('📊 Full Dashboard API response:', JSON.stringify(res.data))
+        console.log('📊 newSignups value:', res.data.newSignups)
         setNewSignups(res.data.newSignups ?? 0)
       })
       .catch(err => {
-        console.error('Dashboard API error', err)
+        console.error('❌ Dashboard API error', err)
         setNewSignups(0)
       })
       .finally(() => {

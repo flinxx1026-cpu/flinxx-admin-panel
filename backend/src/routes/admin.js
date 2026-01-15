@@ -172,7 +172,11 @@ router.get('/dashboard', async (req, res) => {
       WHERE created_at >= NOW() - INTERVAL '24 hours'
     `
 
-    res.json({ newSignups: result[0].count })
+    console.log('📊 Dashboard query result:', JSON.stringify(result))
+    const newSignups = Number(result[0].count)
+    console.log('📊 New signups count:', newSignups)
+    
+    res.json({ newSignups })
   } catch (error) {
     console.error('❌ Dashboard error:', error)
     res.status(500).json({ message: 'Dashboard error' })
