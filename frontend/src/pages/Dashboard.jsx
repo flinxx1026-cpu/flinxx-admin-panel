@@ -24,18 +24,11 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await api.get('/admin/dashboard')
-      setStats(response.data.stats)
-      setChartData(response.data.userActivity)
-      setRevenueData(response.data.revenueData)
-      setUserDistribution(response.data.userDistribution)
-      setRecentActivity(response.data.recentActivity)
-      
-      // Fetch real new signups from dashboard endpoint
-      const dashboardRes = await api.get('/admin/dashboard')
+      // Fetch real new signups from backend
+      const signupsRes = await api.get('/admin/dashboard')
       setStats(prev => ({
         ...prev,
-        newSignups: dashboardRes.data.newSignups
+        newSignups: signupsRes.data.newSignups
       }))
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
