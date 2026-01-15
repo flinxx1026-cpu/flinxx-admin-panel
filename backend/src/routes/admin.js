@@ -166,17 +166,13 @@ router.get('/verify-production-data', async (req, res) => {
 // Dashboard endpoint - returns real data from database
 router.get('/dashboard', async (req, res) => {
   try {
-    const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const result = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count
+      FROM "User"
+      WHERE created_at >= NOW() - INTERVAL '24 hours'
+    `
 
-    const newSignups = await prisma.user.count({
-      where: {
-        created_at: {
-          gte: last24Hours
-        }
-      }
-    })
-
-    res.json({ newSignups })
+    res.json({ newSignups: result[0].count })
   } catch (error) {
     console.error('❌ Dashboard error:', error)
     res.status(500).json({ message: 'Dashboard error' })
