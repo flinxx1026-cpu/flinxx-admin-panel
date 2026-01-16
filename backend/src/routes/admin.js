@@ -97,7 +97,7 @@ router.get('/verify-production-data', async (req, res) => {
 
     // Get all raw counts directly from database tables
     const totalUsers = await prisma.user.count()
-    const bannedUsers = await prisma.user.count({ where: { banned: true } })
+    const bannedUsers = await prisma.user.count({ where: { is_banned: true } })
     const activeUsers = totalUsers - bannedUsers
 
     const totalSessions = await prisma.session.count()
