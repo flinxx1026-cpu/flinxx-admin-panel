@@ -14,6 +14,7 @@ import AdminRoles from './pages/AdminRoles'
 import SecurityLogs from './pages/SecurityLogs'
 import Login from './pages/Login'
 import { checkBanStatus } from './services/api'
+import axios from 'axios'
 
 function App() {
   useEffect(() => {
@@ -23,6 +24,36 @@ function App() {
       console.log('🔍 Checking ban status on app load...')
       checkBanStatus()
     }
+  }, [])
+
+  // Update last_seen by calling user profile endpoint
+  useEffect(() => {
+    const updateUserActivity = async () => {
+      try {
+        const userToken = localStorage.getItem('userToken')
+        
+        if (userToken) {
+          console.log('📍 Updating user activity (last_seen)...')
+          await axios.get(`${(import.meta.env.VITE_API_URL || 'http://localhost:3001')}/api/user/profile`, {
+            headers: {
+              Authorization: `Bearer ${userToken}`,
+            },
+          })
+          console.log('✅ User activity updated')
+        }
+      } catch (error) {
+        console.error('⚠️ Failed to update user activity:', error.message)
+        // Silent fail - this is optional activity tracking
+      }
+    }
+
+    // Call on app load
+    updateUserActivity()
+
+    // Set up periodic update every 5 minutes
+    const interval = setInterval(updateUserActivity, 5 * 60 * 1000)
+
+    return () => clearInterval(interval)
   }, [])
 
   return (
