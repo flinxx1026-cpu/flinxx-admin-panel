@@ -61,6 +61,18 @@ export const verifyUserToken = async (req, res, next) => {
           message: 'Your account has been banned'
         })
       }
+
+      // Update last_seen on user activity
+      try {
+        await prisma.user.update({
+          where: { id: decoded.id },
+          data: { last_seen: new Date() }
+        })
+        console.log(`⏰ Updated last_seen for user: ${decoded.id}`)
+      } catch (updateError) {
+        console.error(`⚠️ Failed to update last_seen for user ${decoded.id}:`, updateError.message)
+        // Don't fail the auth request if last_seen update fails
+      }
     }
 
     req.admin = decoded

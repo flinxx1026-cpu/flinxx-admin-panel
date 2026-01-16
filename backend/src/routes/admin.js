@@ -187,5 +187,31 @@ router.get('/dashboard', async (req, res) => {
   }
 })
 
+// Get active users count - users active in last 5 minutes
+router.get('/active-users', async (req, res) => {
+  try {
+    console.log('👥 Fetching active users count...')
+    
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    
+    const activeUsers = await prisma.user.count({
+      where: {
+        last_seen: {
+          gte: fiveMinutesAgo
+        }
+      }
+    })
+
+    console.log(`✅ Active users (last 5 mins): ${activeUsers}`)
+    
+    res.json({
+      activeUsers: activeUsers
+    })
+  } catch (error) {
+    console.error('❌ Active users error:', error.message)
+    res.status(500).json({ message: 'Failed to fetch active users', error: error.message })
+  }
+})
+
 export default router
 
