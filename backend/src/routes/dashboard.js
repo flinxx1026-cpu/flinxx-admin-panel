@@ -15,16 +15,43 @@ router.get('/', async (req, res) => {
     `
     const newSignups = Number(signupResult[0].count)
     console.log('📊 New signups from DB (last 24h):', newSignups)
+
+    // Get real active users count from database (last 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    const activeUsersCount = await prisma.user.count({
+      where: {
+        last_seen: {
+          gte: fiveMinutesAgo
+        }
+      }
+    })
+    console.log('📊 Active users from DB (last 5 mins):', activeUsersCount)
+
+    // Get total users count
+    const totalUsersCount = await prisma.user.count()
+    console.log('📊 Total users from DB:', totalUsersCount)
+
+    // Get banned users count
+    const bannedUsersCount = await prisma.user.count({
+      where: {
+        is_banned: true
+      }
+    })
+    console.log('📊 Banned users from DB:', bannedUsersCount)
+
+    // Calculate inactive users
+    const inactiveUsersCount = totalUsersCount - activeUsersCount - bannedUsersCount
+    console.log('📊 Inactive users from DB:', inactiveUsersCount)
     
-    // Return completely hardcoded mock data
+    // Return data from database, not hardcoded
     const responseData = {
       stats: {
-        activeUsers: 42,
+        activeUsers: activeUsersCount,
         ongoingSessions: 12,
         newSignups: newSignups,
         revenue: 1200,
         reportsLastDay: 5,
-        totalUsers: 156
+        totalUsers: totalUsersCount
       },
       userActivity: [
         { time: '00:00', users: 24 },
@@ -44,10 +71,10 @@ router.get('/', async (req, res) => {
         { date: 'Sun', revenue: 349 }
       ],
       userDistribution: [
-        { name: 'Active', value: 42 },
-        { name: 'Inactive', value: 114 },
+        { name: 'Active', value: activeUsersCount },
+        { name: 'Inactive', value: inactiveUsersCount },
         { name: 'Suspended', value: 0 },
-        { name: 'Banned', value: 0 }
+        { name: 'Banned', value: bannedUsersCount }
       ],
       recentActivity: [
         {
