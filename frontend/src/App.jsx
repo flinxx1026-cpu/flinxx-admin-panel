@@ -30,20 +30,38 @@ function App() {
   useEffect(() => {
     const updateUserActivity = async () => {
       try {
-        const userToken = localStorage.getItem('userToken')
+        // Check for userToken (from user app login)
+        // OR check for adminToken with user ID (from admin panel user login)
+        let token = localStorage.getItem('userToken')
         
-        if (userToken) {
+        if (!token) {
+          // If no userToken, try to use adminToken if it exists
+          // This handles case where admin is logged in as a user
+          token = localStorage.getItem('adminToken')
+        }
+        
+        if (token) {
           console.log('📍 Updating user activity (last_seen)...')
-          await axios.get(`${(import.meta.env.VITE_API_URL || 'http://localhost:3001')}/api/user/profile`, {
-            headers: {
-              Authorization: `Bearer ${userToken}`,
-            },
-          })
-          console.log('✅ User activity updated')
+          const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3001')
+          
+          try {
+            await axios.get(`${apiUrl}/api/user/profile`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            })
+            console.log('✅ User activity updated (last_seen)')
+          } catch (error) {
+            // Token might be admin token, not user token - that's ok
+            if (error.response?.status === 401 || error.response?.status === 403) {
+              console.log('ℹ️ Not a user token (admin token) - skipping last_seen update')
+            } else {
+              console.error('⚠️ Failed to update user activity:', error.message)
+            }
+          }
         }
       } catch (error) {
-        console.error('⚠️ Failed to update user activity:', error.message)
-        // Silent fail - this is optional activity tracking
+        console.error('⚠️ Error in user activity update:', error.message)
       }
     }
 
