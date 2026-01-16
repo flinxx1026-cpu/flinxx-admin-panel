@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js'
 import adminRoutes from './routes/admin.js'
 import dashboardRoutes from './routes/dashboard.js'
 import usersRoutes from './routes/users.js'
+import userRoutes from './routes/user.js'
 import reportsRoutes from './routes/reports.js'
 import settingsRoutes from './routes/settings.js'
 import { verifyUserToken } from './middleware/userAuthMiddleware.js'
@@ -54,35 +55,6 @@ console.log("✅ CORS middleware applied")
 
 // Then all other middleware
 app.use(express.json())
-
-// Global middleware to update last_seen for all authenticated user requests
-app.use(async (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1]
-    
-    if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key')
-      
-      // Only update last_seen for user tokens (UUID format, not admin tokens)
-      if (decoded.id && typeof decoded.id === 'string' && decoded.id.length === 36) {
-        try {
-          await prisma.$queryRaw`
-            UPDATE "users"
-            SET last_seen = NOW()
-            WHERE id = ${decoded.id}::uuid
-          `
-          console.log(`⏰ Updated last_seen for user: ${decoded.id}`)
-        } catch (updateError) {
-          console.error(`⚠️ Failed to update last_seen for user ${decoded.id}:`, updateError.message)
-          // Don't fail the request if last_seen update fails
-        }
-      }
-    }
-  } catch (error) {
-    // Silently ignore token errors here - they'll be caught by route-specific middleware
-  }
-  next()
-})
 
 const io = new Server(httpServer, {
   cors: corsOptions
@@ -138,6 +110,7 @@ io.on('connection', (socket) => {
 
 // Routes - More specific routes FIRST
 app.use('/api/auth', authRoutes)
+app.use('/api/user', userRoutes)
 app.use('/api/admin/dashboard', dashboardRoutes)
 app.use('/api/admin/users', usersRoutes(io))
 app.use('/api/admin/reports', reportsRoutes)

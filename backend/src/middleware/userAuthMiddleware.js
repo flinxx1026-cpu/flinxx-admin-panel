@@ -39,11 +39,10 @@ export const verifyUserToken = async (req, res, next) => {
 
       // Update last_seen on user activity
       try {
-        await prisma.$queryRaw`
-          UPDATE "users"
-          SET last_seen = NOW()
-          WHERE id = ${decoded.id}::uuid
-        `
+        await prisma.user.update({
+          where: { id: decoded.id },
+          data: { last_seen: new Date() }
+        })
         console.log(`⏰ Updated last_seen for user: ${decoded.id}`)
       } catch (updateError) {
         console.error(`⚠️ Failed to update last_seen for user ${decoded.id}:`, updateError.message)
