@@ -5,8 +5,10 @@ import Modal from '../components/Modal'
 
 export default function UserManagement() {
   const [users, setUsers] = useState([])
+  const [onlineUsers, setOnlineUsers] = useState([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [onlineLoading, setOnlineLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState('')
@@ -15,6 +17,7 @@ export default function UserManagement() {
 
   useEffect(() => {
     fetchUsers()
+    fetchOnlineUsers()
   }, [search])
 
   const fetchUsers = async () => {
@@ -25,6 +28,17 @@ export default function UserManagement() {
     } catch (error) {
       console.error('Failed to fetch users:', error)
       setLoading(false)
+    }
+  }
+
+  const fetchOnlineUsers = async () => {
+    try {
+      const response = await api.get('/admin/users/online')
+      setOnlineUsers(response.data.users || [])
+      setOnlineLoading(false)
+    } catch (error) {
+      console.error('Failed to fetch online users:', error)
+      setOnlineLoading(false)
     }
   }
 
@@ -204,6 +218,65 @@ export default function UserManagement() {
           )}
         </div>
       </Modal>
+
+      {/* Online Users Section */}
+      <div className="space-y-4 pt-6 border-t border-dark-700">
+        <h2 className="text-2xl font-bold text-dark-100">🟢 Online Users</h2>
+        
+        {/* Online Users Table */}
+        <div className="bg-dark-800 border border-dark-700 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-dark-700 border-b border-dark-600">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-dark-200">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-dark-200">Email</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-dark-200">Gender</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-dark-200">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {onlineLoading ? (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-8 text-center">
+                      <p className="text-dark-400">Loading online users...</p>
+                    </td>
+                  </tr>
+                ) : onlineUsers.length > 0 ? (
+                  onlineUsers.map((user) => (
+                    <tr key={user.id} className="border-b border-dark-700 hover:bg-dark-700/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-medium text-dark-100">{user.display_name || 'N/A'}</p>
+                      </td>
+                      <td className="px-6 py-4 text-dark-300">{user.email}</td>
+                      <td className="px-6 py-4 text-sm text-dark-300">
+                        {user.gender 
+                          ? (user.gender.charAt(0).toUpperCase() + user.gender.slice(1))
+                          : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-900/30 border border-green-700 rounded-full">
+                          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                          <span className="text-xs font-medium text-green-400">Online</span>
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-8 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <AlertCircle className="text-dark-400" size={32} />
+                        <p className="text-dark-400">No users currently online</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

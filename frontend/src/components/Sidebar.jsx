@@ -18,6 +18,7 @@ import { useState } from 'react'
 const menuItems = [
   { icon: BarChart3, label: 'Dashboard', path: '/', section: 'main' },
   { icon: Users, label: 'User Management', path: '/users', section: 'users' },
+  { icon: Users, label: 'Online Users', path: '/online-users', section: 'online' },
   { icon: AlertCircle, label: 'Reports', path: '/reports', section: 'moderation' },
   { icon: Video, label: 'Live Sessions', path: '/live-sessions', section: 'sessions' },
   { icon: Sliders, label: 'Matchmaking', path: '/matchmaking', section: 'matchmaking' },

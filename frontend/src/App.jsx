@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import Layout from './layouts/Layout'
 import Dashboard from './pages/Dashboard'
 import UserManagement from './pages/UserManagement'
+import OnlineUsers from './pages/OnlineUsers'
 import ReportsHandling from './pages/ReportsHandling'
 import LiveSessions from './pages/LiveSessions'
 import MatchmakingControls from './pages/MatchmakingControls'
@@ -81,6 +82,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/users" element={<UserManagement />} />
+          <Route path="/online-users" element={<OnlineUsers />} />
           <Route path="/reports" element={<ReportsHandling />} />
           <Route path="/live-sessions" element={<LiveSessions />} />
           <Route path="/matchmaking" element={<MatchmakingControls />} />

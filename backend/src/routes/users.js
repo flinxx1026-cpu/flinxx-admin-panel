@@ -88,6 +88,32 @@ const createUsersRouter = (io) => {
     }
   })
 
+  // GET online users - users active in last 5 minutes
+  router.get('/online', async (req, res) => {
+    try {
+      console.log('📨 Online users endpoint called')
+      
+      // Get users active in last 5 minutes
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+      const onlineUsers = await prisma.$queryRaw`
+        SELECT id, email, display_name, gender, last_seen
+        FROM "users"
+        WHERE last_seen >= ${fiveMinutesAgo}
+        ORDER BY last_seen DESC
+        LIMIT 100
+      `
+      
+      console.log(`✅ Fetched ${onlineUsers.length} online users`)
+      res.json({ users: onlineUsers })
+    } catch (error) {
+      console.error('❌ Error fetching online users:', error)
+      res.status(500).json({ 
+        message: 'Error fetching online users', 
+        error: error.message
+      })
+    }
+  })
+
   // Debug endpoint - test database update without auth
   router.get('/debug/test-update/:userId', async (req, res) => {
     try {
