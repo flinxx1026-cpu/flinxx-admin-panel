@@ -123,8 +123,8 @@ router.get('/', async (req, res) => {
         activeUsers: activeUsersCount,
         ongoingSessions: 12,
         newSignups: newSignups,
-        revenue: 1200,
-        reportsLastDay: 5,
+        revenue: 0,
+        reportsLastDay: 0,
         totalUsers: totalUsersCount
       },
       genderAnalytics: {
