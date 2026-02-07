@@ -11,7 +11,8 @@ export default function Dashboard() {
     ongoingSessions: 0,
     newSignups: 0,
     revenue: 0,
-    reportsLastDay: 0
+    reportsLastDay: 0,
+    totalUsers: 0
   })
   const [genderAnalytics, setGenderAnalytics] = useState({
     totalMaleUsers: 0,
@@ -121,6 +122,14 @@ export default function Dashboard() {
           change="+3%"
           trend="up"
           color="bg-red-900/30"
+        />
+        <StatCard
+          icon={Users}
+          title="Total Users"
+          value={stats.totalUsers}
+          change="+0%"
+          trend="up"
+          color="bg-indigo-900/30"
         />
       </div>
 
