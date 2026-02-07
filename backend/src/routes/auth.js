@@ -62,13 +62,6 @@ router.post('/signup', async (req, res) => {
         gender: gender.toLowerCase()
       }
     })
-        username: username.toLowerCase(),
-        password: hashedPassword,
-        verified: false,
-        banned: false,
-        coins: 0
-      }
-    })
 
     console.log('✅ User registered successfully:', { id: user.id, email: user.email })
 
