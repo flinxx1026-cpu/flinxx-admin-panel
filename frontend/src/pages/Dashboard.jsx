@@ -35,8 +35,10 @@ export default function Dashboard() {
       })
       .then(res => {
         console.log('📊 Full Dashboard API response:', JSON.stringify(res.data))
+        console.log('📊 activeUsers value:', res.data.stats.activeUsers)
         console.log('📊 newSignups value:', res.data.stats.newSignups)
         console.log('📊 genderAnalytics value:', res.data.genderAnalytics)
+        setStats(res.data.stats)
         setNewSignups(res.data.stats.newSignups ?? 0)
         setGenderAnalytics(res.data.genderAnalytics ?? {
           totalMaleUsers: 0,

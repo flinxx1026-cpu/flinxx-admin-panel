@@ -1,4 +1,5 @@
 import express from 'express'
+import jwt from 'jsonwebtoken'
 import prisma from '../config/database.js'
 
 const router = express.Router()
@@ -6,6 +7,35 @@ const router = express.Router()
 router.get('/', async (req, res) => {
   try {
     console.log('📊 Dashboard API called')
+
+    let isAdminActive = false
+
+    // Check if logged-in user is admin and update their activity
+    const token = req.headers.authorization?.split(' ')[1]
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key')
+        console.log('🔐 Token decoded:', { id: decoded.id, role: decoded.role })
+        
+        // If Admin, mark as active
+        if (decoded.role === 'ADMIN') {
+          isAdminActive = true
+          console.log('✅ Admin is accessing dashboard - marking as active')
+        }
+        // If regular user, update last_seen
+        else if (decoded.id) {
+          await prisma.user.update({
+            where: { id: decoded.id },
+            data: { last_seen: new Date() }
+          }).catch(err => {
+            console.log('⚠️ Could not update user last_seen:', err.message)
+          })
+          console.log('✅ Updated last_seen for user:', decoded.id)
+        }
+      } catch (err) {
+        console.log('⚠️ Token verification failed:', err.message)
+      }
+    }
     
     // Get real new signups count from database
     const signupResult = await prisma.$queryRaw`
@@ -16,15 +46,21 @@ router.get('/', async (req, res) => {
     const newSignups = Number(signupResult[0].count)
     console.log('📊 New signups from DB (last 24h):', newSignups)
 
-    // Get real active users count from database (last 5 minutes)
+    // Get real active users count from database (last 5 minutes) - using raw SQL for consistency
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-    const activeUsersCount = await prisma.user.count({
-      where: {
-        last_seen: {
-          gte: fiveMinutesAgo
-        }
-      }
-    })
+    const activeUsersResult = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count
+      FROM users
+      WHERE last_seen >= ${fiveMinutesAgo}
+    `
+    let activeUsersCount = Number(activeUsersResult[0]?.count || 0)
+    
+    // Add 1 if admin is accessing (since admin is not in users table)
+    if (isAdminActive) {
+      activeUsersCount += 1
+      console.log('📊 Admin is active, incrementing active count')
+    }
+    
     console.log('📊 Active users from DB (last 5 mins):', activeUsersCount)
 
     // Get total users count
