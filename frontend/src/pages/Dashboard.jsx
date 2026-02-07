@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, Video, UserPlus, TrendingUp, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react'
+import { Users, Video, UserPlus, TrendingUp, AlertCircle, ArrowUp, ArrowDown, UserCheck } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import api from '../services/api'
@@ -12,6 +12,12 @@ export default function Dashboard() {
     newSignups: 0,
     revenue: 0,
     reportsLastDay: 0
+  })
+  const [genderAnalytics, setGenderAnalytics] = useState({
+    totalMaleUsers: 0,
+    totalFemaleUsers: 0,
+    activeMaleUsers: 0,
+    activeFemaleUsers: 0
   })
   const [chartData, setChartData] = useState([])
   const [revenueData, setRevenueData] = useState([])
@@ -30,7 +36,14 @@ export default function Dashboard() {
       .then(res => {
         console.log('📊 Full Dashboard API response:', JSON.stringify(res.data))
         console.log('📊 newSignups value:', res.data.stats.newSignups)
+        console.log('📊 genderAnalytics value:', res.data.genderAnalytics)
         setNewSignups(res.data.stats.newSignups ?? 0)
+        setGenderAnalytics(res.data.genderAnalytics ?? {
+          totalMaleUsers: 0,
+          totalFemaleUsers: 0,
+          activeMaleUsers: 0,
+          activeFemaleUsers: 0
+        })
       })
       .catch(err => {
         console.error('❌ Dashboard API error', err)
@@ -107,6 +120,45 @@ export default function Dashboard() {
           trend="up"
           color="bg-red-900/30"
         />
+      </div>
+
+      {/* Gender Analytics Section */}
+      <div>
+        <h2 className="text-xl font-semibold text-dark-100 mb-4">👥 User Gender Analytics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            icon={Users}
+            title="Total Male Users"
+            value={genderAnalytics.totalMaleUsers}
+            change="+5%"
+            trend="up"
+            color="bg-cyan-900/30"
+          />
+          <StatCard
+            icon={Users}
+            title="Total Female Users"
+            value={genderAnalytics.totalFemaleUsers}
+            change="+8%"
+            trend="up"
+            color="bg-pink-900/30"
+          />
+          <StatCard
+            icon={UserCheck}
+            title="Active Male Users"
+            value={genderAnalytics.activeMaleUsers}
+            change="+3%"
+            trend="up"
+            color="bg-blue-900/30"
+          />
+          <StatCard
+            icon={UserCheck}
+            title="Active Female Users"
+            value={genderAnalytics.activeFemaleUsers}
+            change="+6%"
+            trend="up"
+            color="bg-rose-900/30"
+          />
+        </div>
       </div>
 
       {/* Charts */}
