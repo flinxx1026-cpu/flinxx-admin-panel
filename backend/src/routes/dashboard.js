@@ -121,7 +121,7 @@ router.get('/', async (req, res) => {
     const responseData = {
       stats: {
         activeUsers: activeUsersCount,
-        ongoingSessions: 12,
+        ongoingSessions: 0,
         newSignups: newSignups,
         revenue: 0,
         reportsLastDay: 0,
@@ -134,21 +134,21 @@ router.get('/', async (req, res) => {
         activeFemaleUsers: activeFemaleUsers
       },
       userActivity: [
-        { time: '00:00', users: 24 },
-        { time: '04:00', users: 13 },
-        { time: '08:00', users: 98 },
-        { time: '12:00', users: 39 },
-        { time: '16:00', users: 48 },
-        { time: '20:00', users: 38 }
+        { time: '00:00', users: 0 },
+        { time: '04:00', users: 0 },
+        { time: '08:00', users: 0 },
+        { time: '12:00', users: 0 },
+        { time: '16:00', users: 0 },
+        { time: '20:00', users: 0 }
       ],
       revenueData: [
-        { date: 'Mon', revenue: 400 },
-        { date: 'Tue', revenue: 300 },
-        { date: 'Wed', revenue: 200 },
-        { date: 'Thu', revenue: 278 },
-        { date: 'Fri', revenue: 189 },
-        { date: 'Sat', revenue: 239 },
-        { date: 'Sun', revenue: 349 }
+        { date: 'Mon', revenue: 0 },
+        { date: 'Tue', revenue: 0 },
+        { date: 'Wed', revenue: 0 },
+        { date: 'Thu', revenue: 0 },
+        { date: 'Fri', revenue: 0 },
+        { date: 'Sat', revenue: 0 },
+        { date: 'Sun', revenue: 0 }
       ],
       userDistribution: [
         { name: 'Active', value: activeUsersCount },
