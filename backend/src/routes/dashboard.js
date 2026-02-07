@@ -43,17 +43,43 @@ router.get('/', async (req, res) => {
     const inactiveUsersCount = totalUsersCount - activeUsersCount - bannedUsersCount
     console.log('📊 Inactive users from DB:', inactiveUsersCount)
 
-    // Gender Analytics - Calculate male/female distribution
-    // Note: This assumes gender field exists in database, or uses calculated/placeholder data
-    const totalMaleUsers = Math.floor(totalUsersCount * 0.55) // 55% male
-    const totalFemaleUsers = totalUsersCount - totalMaleUsers // 45% female
-    const activeMaleUsers = Math.floor(activeUsersCount * 0.55)
-    const activeFemaleUsers = activeUsersCount - activeMaleUsers
+    // Gender Analytics - Count only valid gender values (male/female), exclude NULL/empty
+    const genderCountResult = await prisma.$queryRaw`
+      SELECT gender, COUNT(*)::int AS count
+      FROM users
+      WHERE gender IN ('male', 'female')
+      GROUP BY gender
+    `
     
-    console.log('📊 Total Male Users:', totalMaleUsers)
-    console.log('📊 Total Female Users:', totalFemaleUsers)
-    console.log('📊 Active Male Users:', activeMaleUsers)
-    console.log('📊 Active Female Users:', activeFemaleUsers)
+    // Parse gender counts
+    const genderMap = {}
+    genderCountResult.forEach(row => {
+      genderMap[row.gender.toLowerCase()] = Number(row.count)
+    })
+    
+    const totalMaleUsers = genderMap.male || 0
+    const totalFemaleUsers = genderMap.female || 0
+    
+    console.log('📊 Total Male Users (valid only):', totalMaleUsers)
+    console.log('📊 Total Female Users (valid only):', totalFemaleUsers)
+
+    // Active Male/Female Users - count only valid gender, last_seen within 5 minutes
+    const activeMaleUsersResult = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count
+      FROM users
+      WHERE gender = 'male' AND last_seen >= ${fiveMinutesAgo}
+    `
+    const activeFemaleUsersResult = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count
+      FROM users
+      WHERE gender = 'female' AND last_seen >= ${fiveMinutesAgo}
+    `
+    
+    const activeMaleUsers = Number(activeMaleUsersResult[0]?.count || 0)
+    const activeFemaleUsers = Number(activeFemaleUsersResult[0]?.count || 0)
+    
+    console.log('📊 Active Male Users (valid only):', activeMaleUsers)
+    console.log('📊 Active Female Users (valid only):', activeFemaleUsers)
     
     // Return data from database, not hardcoded
     const responseData = {

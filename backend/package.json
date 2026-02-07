@@ -9,7 +9,8 @@
     "test-cors": "node test-cors.js",
     "verify-db": "node scripts/verifyDatabase.js",
     "cleanup-production": "node scripts/cleanupProduction.js",
-    "seed-admin": "node scripts/seedAdmin.js"
+    "seed-admin": "node scripts/seedAdmin.js",
+    "fix-blank-gender": "node scripts/fixBlankGender.js"
   },
   "dependencies": {
     "@prisma/client": "^5.15.0",

@@ -8,11 +8,17 @@ const router = express.Router()
 // User signup endpoint
 router.post('/signup', async (req, res) => {
   try {
-    const { email, username, password, confirmPassword } = req.body
+    const { email, username, password, confirmPassword, gender } = req.body
 
     // Validation
-    if (!email || !username || !password || !confirmPassword) {
-      return res.status(400).json({ message: 'All fields are required' })
+    if (!email || !username || !password || !confirmPassword || !gender) {
+      return res.status(400).json({ message: 'All fields including gender are required' })
+    }
+
+    // Validate gender is one of the allowed values
+    const validGenders = ['male', 'female']
+    if (!validGenders.includes(gender.toLowerCase())) {
+      return res.status(400).json({ message: 'Gender must be either "male" or "female"' })
     }
 
     if (password !== confirmPassword) {
@@ -48,6 +54,14 @@ router.post('/signup', async (req, res) => {
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
+        username: username.toLowerCase(),
+        password: hashedPassword,
+        verified: false,
+        banned: false,
+        coins: 0,
+        gender: gender.toLowerCase()
+      }
+    })
         username: username.toLowerCase(),
         password: hashedPassword,
         verified: false,
