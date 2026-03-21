@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Users, Video, UserPlus, TrendingUp, AlertCircle, ArrowUp, ArrowDown, UserCheck } from 'lucide-react'
+import { io } from 'socket.io-client'
 import StatCard from '../components/StatCard'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import api from '../services/api'
@@ -8,7 +9,7 @@ export default function Dashboard() {
   const [newSignups, setNewSignups] = useState(0)
   const [stats, setStats] = useState({
     activeUsers: 0,
-    ongoingSessions: 0,
+    liveSessions: 0,
     newSignups: 0,
     revenue: 0,
     reportsLastDay: 0,
@@ -27,34 +28,117 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Fetch real new signups from backend
-    api
-      .get('/admin/dashboard', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+    console.log('🔍 Dashboard component useEffect fired')
+    console.log('📍 API baseURL:', api.defaults.baseURL)
+    console.log('📍 Admin token:', localStorage.getItem('adminToken') ? '✅ Present' : '❌ Missing')
+    
+    // Function to fetch dashboard data
+    const fetchDashboardData = async () => {
+      try {
+        const res = await api.get('/admin/dashboard', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+          }
+        })
+        
+        console.log('📊 Full Dashboard API response:', JSON.stringify(res.data, null, 2))
+        console.log('📊 Response status:', res.status)
+        console.log('📊 Stats object:', res.data?.stats)
+        console.log('📊 Gender Analytics:', res.data?.genderAnalytics)
+        
+        if (res.data?.stats) {
+          console.log('✅ Setting stats to:', res.data.stats)
+          setStats(res.data.stats)
+        } else {
+          console.error('❌ No stats object in response')
         }
-      })
-      .then(res => {
-        console.log('📊 Full Dashboard API response:', JSON.stringify(res.data))
-        console.log('📊 activeUsers value:', res.data.stats.activeUsers)
-        console.log('📊 newSignups value:', res.data.stats.newSignups)
-        console.log('📊 genderAnalytics value:', res.data.genderAnalytics)
-        setStats(res.data.stats)
-        setNewSignups(res.data.stats.newSignups ?? 0)
-        setGenderAnalytics(res.data.genderAnalytics ?? {
+        
+        setNewSignups(res.data?.stats?.newSignups ?? 0)
+        setGenderAnalytics(res.data?.genderAnalytics ?? {
           totalMaleUsers: 0,
           totalFemaleUsers: 0,
           activeMaleUsers: 0,
           activeFemaleUsers: 0
         })
-      })
-      .catch(err => {
-        console.error('❌ Dashboard API error', err)
-        setNewSignups(0)
-      })
-      .finally(() => {
+        
+        // Set additional data from API response
+        if (res.data?.userActivity) {
+          setChartData(res.data.userActivity)
+        }
+        if (res.data?.revenueData) {
+          setRevenueData(res.data.revenueData)
+        }
+        if (res.data?.userDistribution) {
+          setUserDistribution(res.data.userDistribution)
+        }
+        if (res.data?.recentActivity) {
+          setRecentActivity(res.data.recentActivity)
+        }
+        
         setLoading(false)
-      })
+      } catch (err) {
+        console.error('❌ Dashboard API error', err)
+        console.error('❌ Error status:', err.response?.status)
+        console.error('❌ Error data:', err.response?.data)
+        setNewSignups(0)
+      }
+    }
+    
+    // Fetch initial data
+    fetchDashboardData()
+    
+    // ===== SOCKET.IO REALTIME ACTIVE USERS UPDATE =====
+    const socketURL = api.defaults.baseURL?.replace('/api', '') || 'http://localhost:3001'
+    const socket = io(socketURL, {
+      auth: {
+        token: localStorage.getItem('adminToken')
+      }
+    })
+    
+    socket.on('connect', () => {
+      console.log('🔌 Connected to Socket.io server')
+    })
+    
+    // Listen for active users updates from backend
+    socket.on('admin:activeUsersUpdate', (data) => {
+      console.log('📡 Received activeUsersUpdate event:', data)
+      console.log(`👥 Active Users: ${data.activeUsers} (Male: ${data.activeMaleUsers}, Female: ${data.activeFemaleUsers})`)
+      
+      // ✅ Validate: activeUsers should equal activeMaleUsers + activeFemaleUsers
+      const expectedTotal = data.activeMaleUsers + data.activeFemaleUsers
+      if (data.activeUsers !== expectedTotal) {
+        console.warn(`⚠️  Math check failed: ${data.activeUsers} != ${data.activeMaleUsers} + ${data.activeFemaleUsers}`)
+      }
+      
+      // Update stats with realtime data
+      setStats(prevStats => ({
+        ...prevStats,
+        activeUsers: data.activeUsers,
+        activeMaleUsers: data.activeMaleUsers,
+        activeFemaleUsers: data.activeFemaleUsers
+      }))
+      
+      // Update gender analytics
+      setGenderAnalytics(prevGender => ({
+        ...prevGender,
+        activeMaleUsers: data.activeMaleUsers,
+        activeFemaleUsers: data.activeFemaleUsers
+      }))
+    })
+    
+    socket.on('error', (error) => {
+      console.error('❌ Socket.io error:', error)
+    })
+    
+    socket.on('disconnect', () => {
+      console.log('🔌 Disconnected from Socket.io server')
+    })
+    
+    // Cleanup on unmount
+    return () => {
+      console.log('🧹 Cleaning up Socket.io connection')
+      socket.disconnect()
+    }
   }, [])
 
   const COLORS = ['#9333ea', '#7c3aed', '#6d28d9', '#5b21b6']
@@ -94,7 +178,7 @@ export default function Dashboard() {
         <StatCard
           icon={Video}
           title="Live Sessions"
-          value={stats.ongoingSessions}
+          value={stats.liveSessions}
           change="+8%"
           trend="up"
           color="bg-green-900/30"

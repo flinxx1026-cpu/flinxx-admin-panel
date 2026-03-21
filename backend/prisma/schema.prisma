@@ -13,48 +13,125 @@ model Admin {
   password  String
   role      String   @default("moderator")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  is_banned Boolean  @default(false)
-  last_seen DateTime?
-  // ...add other fields as needed
+  id                          String   @id @default(uuid()) @db.Uuid
+  email                       String   @unique @db.VarChar(255)
+  display_name                String?  @db.VarChar(255)
+  photo_url                   String?  @db.Text
+  auth_provider               String?  @db.VarChar(255)
+  provider_id                 String?  @db.VarChar(255)
+  google_id                   String?  @db.Text
+  birthday                    DateTime? @db.Timestamp
+  gender                      String?  @db.Text
+  age                         Int?
+  profileCompleted            Boolean?
+  created_at                  DateTime? @default(now()) @db.Timestamp
+  updated_at                  DateTime? @db.Timestamp
+  termsAccepted               Boolean?
+  public_id                   String?  @db.VarChar(255)
+  ban_reason                  String?  @db.Text
+  warning_count               Int?
+  last_warning_at             DateTime? @db.Timestamp
+  last_seen                   DateTime? @db.Timestamp
+  location                    String?  @db.VarChar(255)
+  profileImage                String?  @db.Text
+  profileimage                String?  @db.Text
+  has_blue_tick               Boolean?
+  blue_tick_expires_at        DateTime? @db.Timestamp
+  has_match_boost             Boolean?
+  match_boost_expires_at      DateTime? @db.Timestamp
+  has_profile_highlight       Boolean?
+  profile_highlight_expires_at DateTime? @db.Timestamp
+  has_unlimited_skip          Boolean?
+  unlimited_skip_expires_at   DateTime? @db.Timestamp
+  daily_skip_count            Int?
+  last_skip_reset_date        DateTime? @db.Date
+  is_premium                  Boolean?  @default(false)
+  premium_type                String?   @db.VarChar(50)
+  premium_expiry              DateTime? @db.Timestamp
+  is_banned                   Boolean?  @default(false)
+  banned_at                   DateTime? @db.Timestamp
+
+  // Relations for sessions (as user1)
+  sessions_user1              Session[] @relation("sessions_user1_idTousers")
+  // Relations for sessions (as user2)
+  sessions_user2              Session[] @relation("sessions_user2_idTousers")
+
+  // Reports Relations
+  reports_received            Report[]  @relation("ReportReceived")
+  reports_submitted           Report[]  @relation("ReportSubmitted")
+
+  appeals                     Appeal[]  @relation("UserAppeals")
 
   @@index([email], map: "idx_users_email")
   @@map("users")
 }
 
-model Report {
-  id             Int      @id @default(autoincrement())
-  reportedUserId Int
-  reason         String
-  evidence       String?
-  status         String   @default("pending")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
 model Session {
-  id        Int       @id @default(autoincrement())
-  user1Id   Int
-  user2Id   Int
-  duration  Int
-  quality   String    @default("high")
-  createdAt DateTime  @default(now())
-  endedAt   DateTime?
+  id                             String    @id @default(uuid()) @db.Uuid
+  user1_id                       String    @db.Uuid
+  user2_id                       String    @db.Uuid
+  started_at                     DateTime? @default(now()) @db.Timestamp(6)
+  ended_at                       DateTime? @db.Timestamp(6)
+  duration_seconds               Int?
+  quality                        String?   @default("good") @db.VarChar(50)
+  
+  // Relations to users
+  users_sessions_user1_idTousers User      @relation("sessions_user1_idTousers", fields: [user1_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  users_sessions_user2_idTousers User      @relation("sessions_user2_idTousers", fields: [user2_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@map("sessions")
+  @@index([started_at], map: "idx_sessions_started_at")
+  @@index([user1_id], map: "idx_sessions_user1")
+  @@index([user2_id], map: "idx_sessions_user2")
 }
 
+enum ReportStatus {
+  pending
+  warned
+  banned
+  resolved
+}
+
+model Report {
+  id              String       @id @default(uuid()) @db.Uuid
+  reportedUserId  String       @map("reported_user_id") @db.Uuid
+  reportedBy      String       @map("reporter_id") @db.Uuid
+  reason          String       @db.VarChar(255)
+  status          String       @default("pending") @db.VarChar(255)
+  created_at      DateTime     @default(now()) @db.Timestamp
+  updated_at      DateTime     @updatedAt @db.Timestamp
+
+  reportedUser    User         @relation("ReportReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reporter        User         @relation("ReportSubmitted", fields: [reportedBy], references: [id], onDelete: Cascade)
+
+  @@unique([reportedUserId, reportedBy])
+  @@index([reportedUserId])
+  @@index([status])
+  @@map("reports")
+}
 model Payment {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  amount        Float
-  status        String   @default("pending")
-  transactionId String   @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  user_id               String?
+  plan_id               String?
+  plan_name             String?
+  amount                Int?
+  currency              String?  @default("INR")
+  cashfree_order_id     String?   @unique
+  cashfree_session_id   String?
+  cashfree_payment_id   String?
+  status                String?  @default("created")
+  refund_status         String?  @default("none")
+  paid_at               DateTime?
+  created_at            DateTime @default(now()) @db.Timestamp(6)
+  updated_at            DateTime @updatedAt @db.Timestamp(6)
+  
+  @@map("payments")
+  @@index([user_id], map: "idx_payments_user_id")
+  @@index([cashfree_order_id], map: "idx_payments_order_id")
 }
 
 model Setting {
@@ -62,4 +139,26 @@ model Setting {
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
+}
+
+enum AppealStatus {
+  pending
+  approved
+  rejected
+}
+
+model Appeal {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @map("user_id") @db.Uuid
+  message     String       @db.Text
+  status      AppealStatus @default(pending)
+  created_at  DateTime     @default(now()) @db.Timestamp
+  updated_at  DateTime     @updatedAt @db.Timestamp
+  reviewed_by Int?         // optional Admin id
+  reviewed_at DateTime?    @db.Timestamp
+
+  user        User         @relation("UserAppeals", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("appeals")
 }

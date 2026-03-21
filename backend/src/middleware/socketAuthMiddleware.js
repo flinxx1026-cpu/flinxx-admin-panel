@@ -22,7 +22,7 @@ export const socketAuthMiddleware = async (socket, next) => {
     // Check if user is banned
     if (decoded.id && typeof decoded.id === 'number') {
       const user = await prisma.user.findUnique({
-        where: { id: decoded.id }
+        where: { id: String(decoded.id) }
       })
 
       if (user && user.banned === true) {

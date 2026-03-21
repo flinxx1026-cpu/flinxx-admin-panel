@@ -18,6 +18,16 @@ router.get('/profile', verifyUserToken, async (req, res) => {
       })
     }
 
+    // Validate UUID format before querying Prisma to prevent crashes
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (typeof userId !== 'string' || !uuidRegex.test(userId)) {
+      console.warn(`⚠️ Invalid UUID for user profile: ${userId}`);
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid user ID format' 
+      })
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {

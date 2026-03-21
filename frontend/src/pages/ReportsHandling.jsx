@@ -34,7 +34,7 @@ export default function ReportsHandling() {
 
   const executeAction = async () => {
     try {
-      await api.post(`/admin/reports/${selectedReport.id}/${modalAction}`)
+      await api.post(`/admin/reports/${selectedReport.id}/action`, { action: modalAction })
       setShowModal(false)
       fetchReports()
     } catch (error) {
@@ -81,7 +81,7 @@ export default function ReportsHandling() {
                 reports.map((report) => (
                   <tr key={report.id} className="border-b border-dark-700 hover:bg-dark-700/30 transition-colors">
                     <td className="px-6 py-4 text-dark-300 font-mono text-sm">REP{String(report.id).padStart(5, '0')}</td>
-                    <td className="px-6 py-4 text-dark-300">{report.reportedUser?.username || 'Unknown'}</td>
+                    <td className="px-6 py-4 text-dark-300">{report.reportedUserEmail}</td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 bg-red-900/30 text-red-300 text-xs rounded">{report.reason}</span>
                     </td>
@@ -94,7 +94,7 @@ export default function ReportsHandling() {
                         {report.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-dark-400">{new Date(report.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-sm text-dark-400">{new Date(report.date).toLocaleDateString()}</td>
                     <td className="px-6 py-4 flex gap-2">
                       <button
                         onClick={() => handleAction(report, 'review')}

@@ -9,9 +9,14 @@ export const connectDB = async () => {
     await prisma.$connect()
     console.log('✅ PostgreSQL connected successfully via Prisma')
     
-    // Test the connection
-    const result = await prisma.$queryRaw`SELECT NOW()`
-    console.log('✅ Database query test successful:', result)
+    // Test the connection with a simpler approach
+    try {
+      const result = await prisma.$queryRaw`SELECT 1`
+      console.log('✅ Database query test successful')
+    } catch (queryError) {
+      console.warn('⚠️ Database test query failed:', queryError.message)
+      // Continue anyway - connection is still valid
+    }
   } catch (error) {
     console.error('❌ PostgreSQL connection failed:', error.message)
     console.error('Error details:', error)

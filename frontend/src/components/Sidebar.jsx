@@ -11,7 +11,8 @@ import {
   Lock,
   Shield,
   Sliders,
-  LogOut
+  LogOut,
+  Zap
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -22,9 +23,10 @@ const menuItems = [
   { icon: AlertCircle, label: 'Reports', path: '/reports', section: 'moderation' },
   { icon: Video, label: 'Live Sessions', path: '/live-sessions', section: 'sessions' },
   { icon: Sliders, label: 'Matchmaking', path: '/matchmaking', section: 'matchmaking' },
+  { icon: Zap, label: 'Assign Premium', path: '/assign-premium', section: 'admin' },
   { icon: DollarSign, label: 'Payments', path: '/payments', section: 'finance' },
   { icon: Image, label: 'Content Mod', path: '/content-moderation', section: 'moderation' },
-  { icon: MessageSquare, label: 'Chat Logs', path: '/chat-logs', section: 'content' },
+  { icon: MessageSquare, label: 'Appeals & Bans', path: '/chat-logs', section: 'content' },
   { icon: Shield, label: 'Admin Roles', path: '/admin-roles', section: 'admin' },
   { icon: Lock, label: 'Security', path: '/security-logs', section: 'security' },
   { icon: Settings, label: 'Settings', path: '/settings', section: 'settings' },

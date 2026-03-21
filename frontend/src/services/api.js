@@ -12,9 +12,15 @@ const api = axios.create({
 
 // Add token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('adminToken')
-  if (token) {
+  const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken') || localStorage.getItem('token') || localStorage.getItem('authToken');
+  
+  console.log("TOKEN:", token);
+  
+  if (token && token !== 'null' && token !== 'undefined') {
     config.headers.Authorization = `Bearer ${token}`
+  } else {
+    // Make sure we never send 'Bearer null'
+    delete config.headers.Authorization
   }
   return config
 })
@@ -52,36 +58,6 @@ api.interceptors.response.use(
   }
 )
 
-// Check ban status on app load
-export const checkBanStatus = async () => {
-  try {
-    const token = localStorage.getItem('adminToken')
-    if (!token) {
-      return { is_banned: false }
-    }
 
-    const response = await api.post('/auth/check-ban')
-    console.log('✅ Ban status check:', response.data)
-    
-    if (response.data.is_banned) {
-      console.error('🚫 USER IS BANNED')
-      localStorage.removeItem('adminToken')
-      localStorage.removeItem('admin')
-      alert(`⛔ Your account has been banned\n\nReason: ${response.data.reason || 'No reason provided'}`)
-      window.location.href = '/login'
-    }
-    
-    return response.data
-  } catch (error) {
-    if (error.response?.status === 403 && error.response?.data?.error_code === 'USER_BANNED') {
-      console.error('🚫 USER IS BANNED')
-      localStorage.removeItem('adminToken')
-      localStorage.removeItem('admin')
-      alert(`⛔ Your account has been banned\n\nReason: ${error.response.data.reason || 'No reason provided'}`)
-      window.location.href = '/login'
-    }
-    return { is_banned: false }
-  }
-}
 
 export default api

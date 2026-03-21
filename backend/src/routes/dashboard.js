@@ -1,6 +1,7 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import prisma from '../config/database.js'
+import { getRedisClient } from '../config/redis.js'
 
 const router = express.Router()
 
@@ -37,91 +38,148 @@ router.get('/', async (req, res) => {
       }
     }
     
-    // Get real new signups count from database
-    const signupResult = await prisma.$queryRaw`
-      SELECT COUNT(*)::int AS count
-      FROM users
-      WHERE created_at >= NOW() - INTERVAL '24 hours'
-    `
-    const newSignups = Number(signupResult[0].count)
+    // Get real new signups count from database (last 24 hours)
+    const newSignups = await prisma.user.count({
+      where: {
+        created_at: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        }
+      }
+    })
     console.log('📊 New signups from DB (last 24h):', newSignups)
 
-    // Get real active users count from database (last 5 minutes) - using raw SQL for consistency
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-    const activeUsersResult = await prisma.$queryRaw`
-      SELECT COUNT(*)::int AS count
-      FROM users
-      WHERE last_seen >= ${fiveMinutesAgo}
-    `
-    let activeUsersCount = Number(activeUsersResult[0]?.count || 0)
+    // ===== GET ACTIVE USERS FROM REDIS =====
+    const redis = getRedisClient()
+    let activeUsersCount = 0
+    let activeMaleUsers = 0
+    let activeFemaleUsers = 0
     
-    // Add 1 if admin is accessing (since admin is not in users table)
+    if (redis && redis.isOpen) {
+      try {
+        // Get active user counts from Redis sets
+        activeUsersCount = await redis.sCard('active_users')
+        activeMaleUsers = await redis.sCard('online_males')
+        activeFemaleUsers = await redis.sCard('online_females')
+        
+        console.log(`📊 Active Users from Redis: ${activeUsersCount}`)
+        console.log(`📊 Active Male Users from Redis: ${activeMaleUsers}`)
+        console.log(`📊 Active Female Users from Redis: ${activeFemaleUsers}`)
+      } catch (err) {
+        console.error('⚠️ Redis error, falling back to DB:', err.message)
+        // Fallback to database query
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+        activeUsersCount = await prisma.user.count({
+          where: {
+            last_seen: {
+              gte: fiveMinutesAgo
+            }
+          }
+        })
+        
+        activeMaleUsers = await prisma.user.count({
+          where: {
+            gender: 'male',
+            last_seen: {
+              gte: fiveMinutesAgo
+            }
+          }
+        })
+        
+        activeFemaleUsers = await prisma.user.count({
+          where: {
+            gender: 'female',
+            last_seen: {
+              gte: fiveMinutesAgo
+            }
+          }
+        })
+      }
+    } else {
+      console.log('⚠️ Redis not available, using database fallback')
+      // Fallback to database query
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+      activeUsersCount = await prisma.user.count({
+        where: {
+          last_seen: {
+            gte: fiveMinutesAgo
+          }
+        }
+      })
+      
+      activeMaleUsers = await prisma.user.count({
+        where: {
+          gender: 'male',
+          last_seen: {
+            gte: fiveMinutesAgo
+          }
+        }
+      })
+      
+      activeFemaleUsers = await prisma.user.count({
+        where: {
+          gender: 'female',
+          last_seen: {
+            gte: fiveMinutesAgo
+          }
+        }
+      })
+    }
+    
+    // Add 1 if admin is accessing (since admin is typically not in users table)
     if (isAdminActive) {
       activeUsersCount += 1
       console.log('📊 Admin is active, incrementing active count')
     }
-    
-    console.log('📊 Active users from DB (last 5 mins):', activeUsersCount)
 
     // Get total users count
     const totalUsersCount = await prisma.user.count()
     console.log('📊 Total users from DB:', totalUsersCount)
 
-    // Get banned users count
+    // Get banned users count (is_banned was removed from new schema, so count where ban_reason is not null)
     const bannedUsersCount = await prisma.user.count({
       where: {
-        is_banned: true
+        ban_reason: {
+          not: null
+        }
       }
     })
     console.log('📊 Banned users from DB:', bannedUsersCount)
 
     // Calculate inactive users
-    const inactiveUsersCount = totalUsersCount - activeUsersCount - bannedUsersCount
+    const inactiveUsersCount = Math.max(0, totalUsersCount - activeUsersCount - bannedUsersCount)
     console.log('📊 Inactive users from DB:', inactiveUsersCount)
 
+    // Get live sessions count
+    const liveSessionsCount = await prisma.session.count({
+      where: {
+        ended_at: null
+      }
+    })
+    console.log('📊 Live sessions from DB:', liveSessionsCount)
+
     // Gender Analytics - Count only valid gender values (male/female), exclude NULL/empty
-    const genderCountResult = await prisma.$queryRaw`
-      SELECT gender, COUNT(*)::int AS count
-      FROM users
-      WHERE gender IN ('male', 'female')
-      GROUP BY gender
-    `
-    
-    // Parse gender counts
-    const genderMap = {}
-    genderCountResult.forEach(row => {
-      genderMap[row.gender.toLowerCase()] = Number(row.count)
+    const totalMaleUsers = await prisma.user.count({
+      where: {
+        gender: 'male'
+      }
     })
     
-    const totalMaleUsers = genderMap.male || 0
-    const totalFemaleUsers = genderMap.female || 0
+    const totalFemaleUsers = await prisma.user.count({
+      where: {
+        gender: 'female'
+      }
+    })
     
-    console.log('📊 Total Male Users (valid only):', totalMaleUsers)
-    console.log('📊 Total Female Users (valid only):', totalFemaleUsers)
-
-    // Active Male/Female Users - count only valid gender, last_seen within 5 minutes
-    const activeMaleUsersResult = await prisma.$queryRaw`
-      SELECT COUNT(*)::int AS count
-      FROM users
-      WHERE gender = 'male' AND last_seen >= ${fiveMinutesAgo}
-    `
-    const activeFemaleUsersResult = await prisma.$queryRaw`
-      SELECT COUNT(*)::int AS count
-      FROM users
-      WHERE gender = 'female' AND last_seen >= ${fiveMinutesAgo}
-    `
+    console.log('📊 Total Male Users:', totalMaleUsers)
+    console.log('📊 Total Female Users:', totalFemaleUsers)
+    console.log('📊 Active Male Users (from Redis):', activeMaleUsers)
+    console.log('📊 Active Female Users (from Redis):', activeFemaleUsers)
     
-    const activeMaleUsers = Number(activeMaleUsersResult[0]?.count || 0)
-    const activeFemaleUsers = Number(activeFemaleUsersResult[0]?.count || 0)
-    
-    console.log('📊 Active Male Users (valid only):', activeMaleUsers)
-    console.log('📊 Active Female Users (valid only):', activeFemaleUsers)
-    
-    // Return data from database, not hardcoded
+    // Return data from database
     const responseData = {
       stats: {
         activeUsers: activeUsersCount,
-        ongoingSessions: 0,
+        liveSessions: liveSessionsCount,
         newSignups: newSignups,
         revenue: 0,
         reportsLastDay: 0,

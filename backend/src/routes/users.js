@@ -88,12 +88,39 @@ const createUsersRouter = (io) => {
     }
   })
 
-  // GET online users - users active in last 5 minutes
+  // GET online users - REALTIME from Redis active_users set
   router.get('/online', async (req, res) => {
     try {
       console.log('📨 Online users endpoint called')
       
-      // Get users active in last 5 minutes
+      // Try Redis first for real-time data
+      const { getRedisClient } = await import('../config/redis.js')
+      const redis = getRedisClient()
+      
+      if (redis && redis.isOpen) {
+        // Get active user IDs from Redis set
+        const activeUserIds = await redis.sMembers('active_users')
+        console.log(`📊 Redis active_users set has ${activeUserIds.length} members`)
+        
+        if (activeUserIds.length > 0) {
+          // Fetch user details from DB for active user IDs
+          const onlineUsers = await prisma.$queryRaw`
+            SELECT id, email, display_name, gender, last_seen
+            FROM "users"
+            WHERE id = ANY(${activeUserIds}::uuid[])
+            ORDER BY display_name ASC
+            LIMIT 100
+          `
+          console.log(`✅ Fetched ${onlineUsers.length} online users from Redis + DB`)
+          return res.json({ users: onlineUsers })
+        } else {
+          console.log('📊 No active users in Redis')
+          return res.json({ users: [] })
+        }
+      }
+      
+      // Fallback: DB-based (last_seen within 5 minutes)
+      console.log('⚠️ Redis not available, falling back to DB last_seen query')
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
       const onlineUsers = await prisma.$queryRaw`
         SELECT id, email, display_name, gender, last_seen
@@ -103,7 +130,7 @@ const createUsersRouter = (io) => {
         LIMIT 100
       `
       
-      console.log(`✅ Fetched ${onlineUsers.length} online users`)
+      console.log(`✅ Fetched ${onlineUsers.length} online users (DB fallback)`)
       res.json({ users: onlineUsers })
     } catch (error) {
       console.error('❌ Error fetching online users:', error)
@@ -141,8 +168,130 @@ const createUsersRouter = (io) => {
     }
   })
 
+  // GET banned users
+  router.get('/banned', async (req, res) => {
+    try {
+      console.log('📨 Fetching banned users')
+      // Retrieve banned users, could use Prisma or raw query
+      const bannedUsers = await prisma.user.findMany({
+        where: { is_banned: true },
+        select: {
+          id: true,
+          email: true,
+          display_name: true,
+          ban_reason: true,
+          banned_at: true
+        },
+        orderBy: { banned_at: 'desc' }
+      })
+      
+      const formatted = bannedUsers.map(u => ({
+        id: u.id,
+        name: u.display_name || u.email || 'Unknown User',
+        reason: u.ban_reason || 'No reason provided',
+        date: u.banned_at,
+        bannedBy: 'System' // Or Admin if stored
+      }))
+      
+      console.log(`✅ Fetched ${bannedUsers.length} banned users`)
+      res.json({ success: true, users: formatted })
+    } catch (error) {
+      console.error('❌ Error fetching banned users:', error)
+      res.status(500).json({ success: false, message: 'Server error fetching banned users', error: error.message })
+    }
+  })
+
   // Protect all write operations with authentication
   router.use(verifyAdminToken)
+
+  router.post('/assign-premium', async (req, res) => {
+    try {
+      const { userIdOrEmail, plan, duration } = req.body
+      const adminId = req.admin?.id
+      
+      console.log(`💎 Assigning premium: ${plan} to ${userIdOrEmail} for ${duration} days by admin ${adminId}`)
+      
+      if (!adminId) {
+        return res.status(401).json({ success: false, message: 'Admin authentication required' })
+      }
+
+      // Find user by ID (UUID) or by Email
+      const searchKey = userIdOrEmail.trim()
+      const isEmail = searchKey.includes('@')
+      let user = null
+      
+      if (isEmail) {
+        user = await prisma.user.findUnique({ where: { email: searchKey.toLowerCase() } })
+      } else {
+        // Assume ID
+        try {
+          user = await prisma.user.findUnique({ where: { id: searchKey } })
+        } catch (e) {
+          user = null
+        }
+      }
+
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' })
+      }
+
+      // Calculate expiry
+      let expiryDate = null
+      if (duration !== 'lifetime') {
+        const days = parseInt(duration)
+        if (!isNaN(days)) {
+          expiryDate = new Date()
+          expiryDate.setDate(expiryDate.getDate() + days)
+        }
+      }
+
+      // Determine the specific fields to update based on plan
+      const updateData = {
+        is_premium: true,
+        premium_type: plan,
+        premium_expiry: expiryDate
+      }
+      
+      if (plan === 'blue_tick') {
+        updateData.has_blue_tick = true
+        updateData.blue_tick_expires_at = expiryDate
+      } else if (plan === 'match_boost') {
+        updateData.has_match_boost = true
+        updateData.match_boost_expires_at = expiryDate
+      } else if (plan === 'unlimited_skip') {
+        updateData.has_unlimited_skip = true
+        updateData.unlimited_skip_expires_at = expiryDate
+      }
+
+      // Update user
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: updateData
+      })
+
+      // Mark as admin-assigned (using raw SQL since column is not in Prisma schema)
+      await prisma.$executeRawUnsafe(
+        `UPDATE users SET premium_assigned_by_admin = true, admin_assigned_plan = $1 WHERE id = $2::uuid`,
+        plan, user.id
+      )
+
+      console.log(`✅ Premium assigned to ${updatedUser.email}`)
+      res.json({
+        success: true,
+        message: 'Premium assigned successfully',
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          is_premium: updatedUser.is_premium,
+          premium_type: updatedUser.premium_type,
+          premium_expiry: updatedUser.premium_expiry
+        }
+      })
+    } catch (error) {
+      console.error('❌ Error assigning premium:', error)
+      res.status(500).json({ success: false, message: 'Server error assigning premium', error: error.message })
+    }
+  })
 
   router.post('/:userId/ban', async (req, res) => {
     let userId = null
@@ -217,7 +366,11 @@ const createUsersRouter = (io) => {
       try {
         bannedUser = await prisma.user.update({
           where: { id: userId },
-          data: { is_banned: true }
+          data: { 
+            is_banned: true,
+            ban_reason: ban_reason || 'Manually banned by admin',
+            banned_at: new Date()
+          }
         })
         console.log(`✅ Database update successful. User banned: ${bannedUser.email}`)
       } catch (updateError) {
@@ -383,6 +536,239 @@ const createUsersRouter = (io) => {
         message: 'Error sending warning to user',
         error: error.message 
       })
+    }
+  })
+
+  // Get ALL admin-assigned premium users (only those assigned by admin, NOT self-purchased)
+  router.get('/all-premium-users', async (req, res) => {
+    try {
+      console.log('💎 Fetching admin-assigned premium users');
+      const now = new Date();
+
+      // Use raw SQL to query the premium_assigned_by_admin column (not in Prisma schema)
+      const users = await prisma.$queryRaw`
+        SELECT id, email, is_premium, premium_type, premium_expiry,
+               has_blue_tick, blue_tick_expires_at,
+               has_match_boost, match_boost_expires_at,
+               has_unlimited_skip, unlimited_skip_expires_at,
+               admin_assigned_plan
+        FROM users
+        WHERE premium_assigned_by_admin = true
+      `;
+
+      // Format: one entry per admin-assigned user
+      const formattedUsers = users.map(user => {
+        const plan = user.admin_assigned_plan || user.premium_type || 'premium';
+        let expiry = user.premium_expiry;
+        
+        // Get the correct expiry based on plan
+        if (plan === 'blue_tick') expiry = user.blue_tick_expires_at || user.premium_expiry;
+        else if (plan === 'match_boost') expiry = user.match_boost_expires_at || user.premium_expiry;
+        else if (plan === 'unlimited_skip') expiry = user.unlimited_skip_expires_at || user.premium_expiry;
+        
+        const planLabel = plan.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        
+        return {
+          id: user.id,
+          email: user.email,
+          plan: plan,
+          planLabel: planLabel,
+          expiry: expiry,
+          status: expiry && new Date(expiry) < now ? 'Expired' : 'Active'
+        };
+      });
+
+      console.log(`✅ Found ${formattedUsers.length} admin-assigned premium users`);
+      res.json({ success: true, users: formattedUsers });
+    } catch (error) {
+      console.error('❌ Error fetching admin-assigned premium users:', error);
+      res.status(500).json({ success: false, message: 'Server error fetching premium users', error: error.message });
+    }
+  });
+
+  // Get premium users
+  router.get('/premium-users', async (req, res) => {
+    try {
+      const { email } = req.query;
+      
+      if (!email || !email.trim()) {
+        return res.json({ success: true, users: [] });
+      }
+
+      console.log(`💎 Fetching premium user info for: ${email}`)
+      const now = new Date()
+      const searchKey = email.trim().toLowerCase();
+      const isEmail = searchKey.includes('@');
+      
+      let user = null;
+      if (isEmail) {
+        user = await prisma.user.findFirst({
+          where: { email: searchKey },
+          select: {
+            id: true, email: true, is_premium: true, premium_type: true,
+            premium_expiry: true, has_blue_tick: true, blue_tick_expires_at: true,
+            has_match_boost: true, match_boost_expires_at: true, 
+            has_unlimited_skip: true, unlimited_skip_expires_at: true
+          }
+        });
+      } else {
+        // Validate UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(searchKey)) {
+          user = await prisma.user.findFirst({
+            where: { id: searchKey },
+            select: {
+              id: true, email: true, is_premium: true, premium_type: true,
+              premium_expiry: true, has_blue_tick: true, blue_tick_expires_at: true,
+              has_match_boost: true, match_boost_expires_at: true, 
+              has_unlimited_skip: true, unlimited_skip_expires_at: true
+            }
+          });
+        } else {
+          console.warn(`⚠️ Invalid UUID searched: ${searchKey}`);
+        }
+      }
+
+      let premiumUsers = [];
+
+      if (user) {
+        // 2. Check if user has any premium condition
+        const isPremium = user.has_blue_tick || user.has_match_boost || user.has_unlimited_skip || user.is_premium;
+        
+        if (isPremium) {
+          // 3. If premium, add to response array
+          premiumUsers = [user];
+          console.log(`✅ Found premium user: ${user.email}`);
+        } else {
+          // 4. If not, array remains empty
+          console.log(`⚠️ User found but not premium: ${user.email}`);
+        }
+      } else {
+        console.log(`⚠️ No user found for: ${searchKey}`);
+      }
+      
+      // Map to frontend expected format
+      const formattedUsers = []
+      
+      premiumUsers.forEach(user => {
+        let planInternal = '';
+        let planLabel = '';
+        let expiry = null;
+        
+        // Priority check: consider active or expired
+        if (user.has_blue_tick) {
+          planInternal = 'blue_tick';
+          planLabel = 'Blue Tick';
+          expiry = user.blue_tick_expires_at;
+        } else if (user.has_match_boost) {
+          planInternal = 'match_boost';
+          planLabel = 'Match Boost';
+          expiry = user.match_boost_expires_at;
+        } else if (user.has_unlimited_skip) {
+          planInternal = 'unlimited_skip';
+          planLabel = 'Unlimited Skip';
+          expiry = user.unlimited_skip_expires_at;
+        } else if (user.is_premium) {
+          planInternal = user.premium_type || 'premium';
+          planLabel = 'Premium';
+          expiry = user.premium_expiry;
+        }
+        
+        if (planInternal) {
+          let status = 'Active';
+          if (expiry && new Date(expiry) < now) {
+            status = 'Expired';
+          }
+
+          formattedUsers.push({
+            id: user.id,
+            email: user.email,
+            plan: planInternal,      // Backend expects 'blue_tick', 'match_boost', etc for removal
+            planLabel: planLabel,   // 'Blue Tick', etc
+            expiry: expiry,
+            status: status
+          })
+        }
+      })
+
+      res.json({ success: true, users: formattedUsers })
+    } catch (error) {
+      console.error('❌ Error fetching premium users:', error)
+      res.status(500).json({ success: false, message: 'Server error fetching premium users', error: error.message })
+    }
+  })
+
+  // Remove premium
+  router.post('/remove-premium', async (req, res) => {
+    try {
+      const { userIdOrEmail, plan } = req.body
+      const adminId = req.admin?.id
+      
+      console.log(`🗑️ Removing premium: ${plan} for ${userIdOrEmail} by admin ${adminId}`)
+      
+      if (!adminId) {
+        return res.status(401).json({ success: false, message: 'Admin authentication required' })
+      }
+
+      const searchKey = userIdOrEmail.trim()
+      const isEmail = searchKey.includes('@')
+      let user = null
+      
+      if (isEmail) {
+        user = await prisma.user.findUnique({ where: { email: searchKey.toLowerCase() } })
+      } else {
+        try {
+          user = await prisma.user.findUnique({ where: { id: searchKey } })
+        } catch (e) {
+          user = null
+        }
+      }
+
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' })
+      }
+
+      // Determine the specific fields to clear
+      const updateData = {}
+      
+      if (plan === 'blue_tick') {
+        updateData.has_blue_tick = false
+        updateData.blue_tick_expires_at = null
+      } else if (plan === 'match_boost') {
+        updateData.has_match_boost = false
+        updateData.match_boost_expires_at = null
+      } else if (plan === 'unlimited_skip') {
+        updateData.has_unlimited_skip = false
+        updateData.unlimited_skip_expires_at = null
+      }
+
+      // Clear general premium if removing the main assigned one, or just clear regardless
+      if (user.premium_type === plan || !user.premium_type) {
+        updateData.is_premium = false
+        updateData.premium_type = null
+        updateData.premium_expiry = null
+      }
+
+      // Update user
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: updateData
+      })
+
+      // Clear admin-assigned flag (using raw SQL since column is not in Prisma schema)
+      await prisma.$executeRawUnsafe(
+        `UPDATE users SET premium_assigned_by_admin = false, admin_assigned_plan = NULL WHERE id = $1::uuid`,
+        user.id
+      )
+
+      console.log(`✅ Premium ${plan} removed for ${updatedUser.email}`)
+      res.json({
+        success: true,
+        message: 'Premium removed successfully',
+      })
+    } catch (error) {
+      console.error('❌ Error removing premium:', error)
+      res.status(500).json({ success: false, message: 'Server error removing premium', error: error.message })
     }
   })
 
