@@ -47,7 +47,7 @@ export default function SessionMonitoring({ session, onClose }) {
   useEffect(() => {
     if (!session?.id) return
 
-    const mainBackendUrl = import.meta.env.VITE_MAIN_BACKEND_URL || 'http://localhost:5000'
+    const mainBackendUrl = import.meta.env.VITE_MAIN_BACKEND_URL || 'https://d1pphanrf0qsx7.cloudfront.net'
     console.log('👁️ [SPECTATOR] Connecting to main backend:', mainBackendUrl)
 
     // Connect to the MAIN backend (where WebRTC streams live)
