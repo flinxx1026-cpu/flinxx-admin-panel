@@ -18,9 +18,10 @@ export default function ChatLogs() {
         'Authorization': `Bearer ${token}`
       }
 
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const endpoint = activeTab === 'appeals' 
-        ? 'http://localhost:3001/api/admin/appeals' 
-        : 'http://localhost:3001/api/admin/users/banned';
+        ? `${apiUrl}/api/admin/appeals` 
+        : `${apiUrl}/api/admin/users/banned`;
         
       const res = await fetch(endpoint, { headers })
       
@@ -49,7 +50,8 @@ export default function ChatLogs() {
   const handleApproveAppeal = async (id) => {
     try {
       const token = localStorage.getItem('adminToken')
-      const res = await fetch(`http://localhost:3001/api/admin/appeals/${id}/approve`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${apiUrl}/api/admin/appeals/${id}/approve`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -67,7 +69,8 @@ export default function ChatLogs() {
   const handleRejectAppeal = async (id) => {
     try {
       const token = localStorage.getItem('adminToken')
-      const res = await fetch(`http://localhost:3001/api/admin/appeals/${id}/reject`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${apiUrl}/api/admin/appeals/${id}/reject`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -85,7 +88,8 @@ export default function ChatLogs() {
   const handleUnban = async (userId) => {
     try {
       const token = localStorage.getItem('adminToken')
-      const res = await fetch(`http://localhost:3001/api/admin/users/${userId}/unban`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${apiUrl}/api/admin/users/${userId}/unban`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       })
