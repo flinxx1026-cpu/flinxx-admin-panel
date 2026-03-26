@@ -429,4 +429,4 @@ initServer().catch(err => {
 
 export default app
 
-// Trigger restart for Prisma client update
+// Trigger restart for AWS RDS Migration

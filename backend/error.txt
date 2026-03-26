@@ -1,0 +1,1 @@
+"\nInvalid `prisma.user.findUnique()` invocation:\n\n\nThe column `users.banned_at` does not exist in the current database."
