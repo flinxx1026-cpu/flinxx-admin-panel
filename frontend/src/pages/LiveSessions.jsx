@@ -78,7 +78,7 @@ export default function LiveSessions() {
 
     // ===== 2. Main flinxx backend socket (port 5000) — REAL-TIME session events =====
     // session:removed / session:live events are emitted by the flinxx backend, NOT admin backend
-    const mainBackendUrl = import.meta.env.VITE_MAIN_BACKEND_URL || 'http://localhost:5000'
+    const mainBackendUrl = import.meta.env.VITE_MAIN_BACKEND_URL || 'https://api.flinxx.in'
     const mainSocket = io(mainBackendUrl, {
       reconnection: true,
       reconnectionDelay: 1000,

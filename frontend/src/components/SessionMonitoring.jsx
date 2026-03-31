@@ -47,14 +47,26 @@ export default function SessionMonitoring({ session, onClose }) {
   useEffect(() => {
     if (!session?.id) return
 
-    const mainBackendUrl = import.meta.env.VITE_MAIN_BACKEND_URL || 'https://d1pphanrf0qsx7.cloudfront.net'
+    const mainBackendUrl = import.meta.env.VITE_MAIN_BACKEND_URL || 'https://api.flinxx.in'
     console.log('👁️ [SPECTATOR] Connecting to main backend:', mainBackendUrl)
+
+    // Fetch ICE server config from main backend (includes TURN for NAT traversal)
+    let fetchedIceServers = null
+    fetch(`${mainBackendUrl}/api/ice-servers`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.iceServers && data.iceServers.length > 0) {
+          fetchedIceServers = data.iceServers
+          console.log('✅ [SPECTATOR] Fetched ICE servers from backend:', fetchedIceServers.length, 'servers')
+        }
+      })
+      .catch(err => console.warn('⚠️ [SPECTATOR] Could not fetch ICE servers, using defaults:', err.message))
 
     // Connect to the MAIN backend (where WebRTC streams live)
     const mainSocket = ioClient(mainBackendUrl, {
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       transports: ['websocket', 'polling']
     })
 
@@ -106,15 +118,17 @@ export default function SessionMonitoring({ session, onClose }) {
         // Record socket→label mapping for ICE routing
         fromSocketToLabelRef.current[from] = participantLabel
 
-        const pc = new RTCPeerConnection({
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' }
-          ]
-        })
+        // Use fetched ICE servers (with TURN) if available, otherwise fall back to STUN
+        const iceServers = fetchedIceServers || [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' }
+        ]
+        console.log(`🧊 [SPECTATOR] Using ${iceServers.length} ICE servers for ${participantLabel}`)
+
+        const pc = new RTCPeerConnection({ iceServers })
 
         // Store the PC by participant label
         peerConnectionsRef.current[participantLabel] = pc
